@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 챗헤드 오버레이 -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <!-- Android 13+ 알림 표시 -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- 배터리 최적화 예외 요청 -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- 재부팅 후 알람 재등록 -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- 정확한 알람 (Android 12+) -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- 포그라운드 서비스 (챗헤드 유지) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- Android 11+ 설치된 앱 목록 조회 -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".RoutineCheckApp"
+        android:allowBackup="true"
+        android:label="루틴 체크"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.RoutineCheck">
+
+        <activity
+            android:name=".onboarding.OnboardingActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />
+
+        <!-- 챗헤드 오버레이 서비스 (foreground) -->
+        <service
+            android:name=".chathead.ChatHeadService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse" />
+
+        <!-- 재부팅 시 알람 재등록 -->
+        <receiver
+            android:name=".scheduler.BootCompletedReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".scheduler.RoutineAlarmReceiver"
+            android:exported="false" />
+
+    </application>
+</manifest>
