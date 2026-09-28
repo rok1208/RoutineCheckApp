@@ -2,11 +2,13 @@ package com.routinecheck.app.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
+import com.routinecheck.app.data.local.dao.ChatHeadSettingsDao
 import com.routinecheck.app.data.local.dao.ChecklistStateDao
 import com.routinecheck.app.data.local.dao.NotificationBadgeDao
 import com.routinecheck.app.data.local.dao.RoutineAppDao
 import com.routinecheck.app.data.local.dao.RoutineDao
 import com.routinecheck.app.data.local.entity.AppNotificationBadgeEntity
+import com.routinecheck.app.data.local.entity.ChatHeadSettingsEntity
 import com.routinecheck.app.data.local.entity.RoutineAppEntity
 import com.routinecheck.app.data.local.entity.RoutineChecklistStateEntity
 import com.routinecheck.app.data.local.entity.RoutineEntity
@@ -26,9 +28,10 @@ import com.routinecheck.app.data.local.entity.RoutineEntity
         RoutineEntity::class,
         RoutineAppEntity::class,
         RoutineChecklistStateEntity::class,
-        AppNotificationBadgeEntity::class
+        AppNotificationBadgeEntity::class,
+        ChatHeadSettingsEntity::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -36,4 +39,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun routineAppDao(): RoutineAppDao
     abstract fun checklistStateDao(): ChecklistStateDao
     abstract fun notificationBadgeDao(): NotificationBadgeDao
+    abstract fun chatHeadSettingsDao(): ChatHeadSettingsDao
 }

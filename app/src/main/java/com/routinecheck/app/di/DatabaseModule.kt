@@ -3,6 +3,8 @@ package com.routinecheck.app.di
 import android.content.Context
 import androidx.room.Room
 import com.routinecheck.app.data.local.AppDatabase
+import com.routinecheck.app.data.local.MIGRATION_1_2
+import com.routinecheck.app.data.local.dao.ChatHeadSettingsDao
 import com.routinecheck.app.data.local.dao.ChecklistStateDao
 import com.routinecheck.app.data.local.dao.NotificationBadgeDao
 import com.routinecheck.app.data.local.dao.RoutineAppDao
@@ -29,7 +31,8 @@ object DatabaseModule {
             AppDatabase::class.java,
             "routine_check.db"
         )
-            // TODO: 스키마 변경 시 .addMigrations(MIGRATION_1_2, ...) 추가
+            // 스키마를 바꿀 때마다 새 Migration을 여기에 추가 (예: MIGRATION_2_3)
+            .addMigrations(MIGRATION_1_2)
             .build()
 
     @Provides
@@ -43,4 +46,7 @@ object DatabaseModule {
 
     @Provides
     fun provideNotificationBadgeDao(db: AppDatabase): NotificationBadgeDao = db.notificationBadgeDao()
+
+    @Provides
+    fun provideChatHeadSettingsDao(db: AppDatabase): ChatHeadSettingsDao = db.chatHeadSettingsDao()
 }
