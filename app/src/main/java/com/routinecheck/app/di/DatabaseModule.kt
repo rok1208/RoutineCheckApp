@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import com.routinecheck.app.data.local.ALL_MIGRATIONS
 import com.routinecheck.app.data.local.AppDatabase
-import com.routinecheck.app.data.local.dao.ChatHeadAppDao
+import com.routinecheck.app.data.local.dao.ChatHeadItemDao
 import com.routinecheck.app.data.local.dao.ChatHeadSettingsDao
 import com.routinecheck.app.data.local.dao.ChecklistStateDao
 import com.routinecheck.app.data.local.dao.DailyMemoDao
@@ -49,5 +49,5 @@ object DatabaseModule {
     fun provideDailyMemoDao(db: AppDatabase): DailyMemoDao = db.dailyMemoDao()
 
     @Provides
-    fun provideChatHeadAppDao(db: AppDatabase): ChatHeadAppDao = db.chatHeadAppDao()
+    fun provideChatHeadItemDao(db: AppDatabase): ChatHeadItemDao = db.chatHeadItemDao()
 }

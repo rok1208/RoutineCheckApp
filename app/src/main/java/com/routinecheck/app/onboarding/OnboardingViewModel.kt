@@ -23,7 +23,8 @@ data class OnboardingUiState(
 
 /**
  * 온보딩 화면 상태. 설정 화면 등에서 돌아올 때마다 refresh()로 다시 읽습니다.
- * 필수: 오버레이 · 알림 · 정확한 알람 / 권장: 알림 접근(배지) · 배터리 최적화 제외
+ * 필수: 오버레이 / 선택(권장): 알림 · 정확한 알람 · 알림 접근(배지) · 배터리 최적화 제외
+ * 루틴 알림은 선택 기능이라 알림·정확한 알람 권한 없이도 시작할 수 있습니다.
  */
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
@@ -45,13 +46,15 @@ class OnboardingViewModel @Inject constructor(
                 ),
                 PermissionStepUiState(
                     PermissionType.NOTIFICATION, "알림",
-                    "루틴 시간이 되면 알려드려요",
-                    PermissionUtils.hasNotificationPermission(context)
+                    "루틴 시작 알림을 받으려면 허용해 주세요 (선택)",
+                    PermissionUtils.hasNotificationPermission(context),
+                    isRequired = false
                 ),
                 PermissionStepUiState(
                     PermissionType.EXACT_ALARM, "정확한 알람",
-                    "루틴 시각에 늦지 않게 정각에 알려드려요",
-                    PermissionUtils.canScheduleExactAlarms(context)
+                    "루틴 시각에 늦지 않게 정각에 알려드려요 (선택)",
+                    PermissionUtils.canScheduleExactAlarms(context),
+                    isRequired = false
                 ),
                 PermissionStepUiState(
                     PermissionType.NOTIFICATION_LISTENER, "알림 접근",

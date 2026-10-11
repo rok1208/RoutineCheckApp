@@ -104,6 +104,7 @@ private fun RoutineCard(item: RoutineWithApps, onClick: () -> Unit, onEnabledCha
                     Text(
                         buildString {
                             append(DayMask.label(routine.daysOfWeek))
+                            append(if (routine.notifyEnabled) " · 🔔 알림" else " · 🔕 알림 끔")
                             if (routine.autoStart) append(" · 챗헤드 자동 펼침")
                             if (routine.alarmLinked) append(" · 시계 알람 연동")
                         },

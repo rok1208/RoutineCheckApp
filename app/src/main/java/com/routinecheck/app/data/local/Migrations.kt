@@ -52,4 +52,33 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
     }
 }
 
-val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+/**
+ * v4 → v5: 챗헤드 항목 통합 (앱 · 웹사이트 · 폴더).
+ * 기존 chathead_apps의 앱은 모두 최상단(parentId = NULL)의 APP 항목으로 그대로 옮긴 뒤 옛 테이블을 지웁니다.
+ * 함께: 루틴별 시작 알림 켜기/끄기(routines.notifyEnabled), 알림 방식(chathead_settings.alertMode)
+ */
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `chathead_items` (" +
+                "`itemId` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                "`type` TEXT NOT NULL, " +
+                "`title` TEXT NOT NULL, " +
+                "`packageName` TEXT, " +
+                "`url` TEXT, " +
+                "`parentId` INTEGER, " +
+                "`sortOrder` INTEGER NOT NULL, " +
+                "`addedAt` INTEGER NOT NULL)"
+        )
+        db.execSQL("CREATE INDEX IF NOT EXISTS `index_chathead_items_parentId` ON `chathead_items` (`parentId`)")
+        db.execSQL(
+            "INSERT INTO `chathead_items` (`type`, `title`, `packageName`, `url`, `parentId`, `sortOrder`, `addedAt`) " +
+                "SELECT 'APP', `appLabel`, `packageName`, NULL, NULL, `sortOrder`, `addedAt` FROM `chathead_apps`"
+        )
+        db.execSQL("DROP TABLE IF EXISTS `chathead_apps`")
+        db.execSQL("ALTER TABLE `routines` ADD COLUMN `notifyEnabled` INTEGER NOT NULL DEFAULT 1")
+        db.execSQL("ALTER TABLE `chathead_settings` ADD COLUMN `alertMode` TEXT NOT NULL DEFAULT 'SOUND_VIBRATE'")
+    }
+}
+
+val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)

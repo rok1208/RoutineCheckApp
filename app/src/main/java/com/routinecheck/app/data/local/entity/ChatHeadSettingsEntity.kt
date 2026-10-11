@@ -13,6 +13,8 @@ import androidx.room.PrimaryKey
  *  - uiStyle  : 펼침 방식. "CAROUSEL"(휠 피커, 기본값) / "CONTAINER"(사각형 목록, 대체 스타일)
  *  - enabled  : 챗헤드를 켜 둘지 여부 (재부팅 후 자동으로 다시 띄울지 판단에도 사용)
  * 두 컬럼이 추가되었습니다.
+ *
+ * v5: 루틴 알림 방식(alertMode) 컬럼 추가
  */
 @Entity(tableName = "chathead_settings")
 data class ChatHeadSettingsEntity(
@@ -36,7 +38,10 @@ data class ChatHeadSettingsEntity(
     val uiStyle: String = "CAROUSEL",
 
     /** 챗헤드 사용 여부 */
-    val enabled: Boolean = true
+    val enabled: Boolean = true,
+
+    /** v5: 루틴 시작 알림 방식 "SOUND_VIBRATE"(기본) / "SOUND" / "VIBRATE" — 앱 전체 설정이라 이 표에 함께 둡니다 */
+    val alertMode: String = "SOUND_VIBRATE"
 ) {
     companion object {
         const val SINGLETON_ID = 1

@@ -25,13 +25,18 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Apps
+import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.VerticalAlignTop
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Home
@@ -45,6 +50,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -73,7 +79,9 @@ import com.routinecheck.app.data.repository.Badge
 import com.routinecheck.app.data.repository.ChatHeadStyle
 import com.routinecheck.app.data.repository.EdgeSide
 import com.routinecheck.app.domain.ChatHeadEntry
-import com.routinecheck.app.ui.common.AppIcon
+import com.routinecheck.app.domain.ChatHeadKind
+import com.routinecheck.app.domain.LinkUtils
+import com.routinecheck.app.ui.common.ChatHeadItemIcon
 import com.routinecheck.app.ui.common.BadgeDot
 import com.routinecheck.app.ui.theme.Brand
 import kotlinx.coroutines.launch
@@ -91,6 +99,8 @@ object HeadDimens {
     val CardWidth = 236.dp
     const val SIDE_ITEMS = 2
     val HeaderHeight = 40.dp
+    /** 폴더 안: 경로 줄 + "이전으로 / 최상단으로" 줄 */
+    val FolderHeaderHeight = 76.dp
     val FooterHeight = 52.dp
     val ContainerWidth = 272.dp
 }
@@ -200,6 +210,10 @@ data class ExpandedActions(
     val onDismiss: () -> Unit,
     val onLaunch: (ChatHeadEntry) -> Unit,
     val onToggleCheck: (ChatHeadEntry) -> Unit,
+    /** 폴더 한 단계 위로 */
+    val onBack: () -> Unit,
+    /** 최상단으로 */
+    val onTop: () -> Unit,
     val onOpenApp: () -> Unit,
     val onManageApps: () -> Unit,
     val onOpenSettings: () -> Unit
@@ -223,10 +237,11 @@ fun ExpandedPanel(state: OverlayState, actions: ExpandedActions) {
             val isCarousel = state.settings.uiStyle == ChatHeadStyle.CAROUSEL
             val bodyHeight = if (isCarousel) HeadDimens.ItemHeight * (HeadDimens.SIDE_ITEMS * 2 + 1)
             else containerHeight(state.entries.size)
-            val totalHeight = HeadDimens.HeaderHeight + bodyHeight + HeadDimens.FooterHeight
+            val headerHeight = if (state.inFolder) HeadDimens.FolderHeaderHeight else HeadDimens.HeaderHeight
+            val totalHeight = headerHeight + bodyHeight + HeadDimens.FooterHeight
             // 원형 아이콘이 원래 있던 높이에 오도록 배치 (화면 밖으로 나가지 않게 보정)
-            val wantedTop = if (isCarousel) anchorY - HeadDimens.HeaderHeight - bodyHeight / 2
-            else anchorY - HeadDimens.HeaderHeight - HeadDimens.HeadWindow / 2
+            val wantedTop = if (isCarousel) anchorY - headerHeight - bodyHeight / 2
+            else anchorY - headerHeight - HeadDimens.HeadWindow / 2
             val top = wantedTop.coerceIn(24.dp, (maxHeight - totalHeight - 24.dp).coerceAtLeast(24.dp))
 
             val alignRight = state.side == EdgeSide.RIGHT
@@ -236,7 +251,7 @@ fun ExpandedPanel(state: OverlayState, actions: ExpandedActions) {
                     .offset(y = top),
                 horizontalAlignment = if (alignRight) Alignment.End else Alignment.Start
             ) {
-                PanelHeader(state, alignRight)
+                if (state.inFolder) FolderHeader(state, alignRight, actions) else PanelHeader(state, alignRight)
 
                 Row(verticalAlignment = if (isCarousel) Alignment.CenterVertically else Alignment.Top) {
                     val bubble: @Composable () -> Unit = {
@@ -246,12 +261,15 @@ fun ExpandedPanel(state: OverlayState, actions: ExpandedActions) {
                         )
                     }
                     if (!alignRight) bubble()
-                    if (state.entries.isEmpty()) {
-                        EmptyCard(actions.onManageApps, Modifier.width(HeadDimens.CardWidth))
-                    } else if (isCarousel) {
-                        WheelCarousel(state, alignRight, actions)
-                    } else {
-                        ContainerList(state, actions)
+                    // 폴더를 옮겨 다닐 때마다 스크롤 위치를 처음부터 (key = 현재 폴더)
+                    key(state.folderPath.lastOrNull()?.id) {
+                        if (state.entries.isEmpty()) {
+                            EmptyCard(state.inFolder, actions.onManageApps, Modifier.width(HeadDimens.CardWidth))
+                        } else if (isCarousel) {
+                            WheelCarousel(state, alignRight, actions)
+                        } else {
+                            ContainerList(state, actions)
+                        }
                     }
                     if (alignRight) bubble()
                 }
@@ -286,6 +304,43 @@ private fun PanelHeader(state: OverlayState, alignRight: Boolean) {
     }
 }
 
+/** 폴더 안에 있을 때의 머리말: 경로 + "이전으로" / "최상단으로" */
+@Composable
+private fun FolderHeader(state: OverlayState, alignRight: Boolean, actions: ExpandedActions) {
+    Column(
+        modifier = Modifier
+            .height(HeadDimens.FolderHeaderHeight)
+            .padding(horizontal = 72.dp),
+        horizontalAlignment = if (alignRight) Alignment.End else Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically)
+    ) {
+        Surface(shape = RoundedCornerShape(50), color = Color(0xE61C2630)) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+            ) {
+                Icon(Icons.Rounded.Folder, contentDescription = null, tint = Brand.Mint, modifier = Modifier.size(15.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    // 경로가 길면 앞쪽을 줄여서 "… › 개발 › 서버"
+                    text = state.folderPath.map { it.title }.let { names ->
+                        if (names.size > 3) "… › " + names.takeLast(2).joinToString(" › ") else names.joinToString(" › ")
+                    },
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.widthIn(max = 200.dp)
+                )
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            FooterChip(Icons.AutoMirrored.Rounded.ArrowBack, "이전으로", actions.onBack)
+            FooterChip(Icons.Rounded.VerticalAlignTop, "최상단으로", actions.onTop)
+        }
+    }
+}
+
 @Composable
 private fun PanelFooter(alignRight: Boolean, isCarousel: Boolean, actions: ExpandedActions) {
     Column(
@@ -301,7 +356,7 @@ private fun PanelFooter(alignRight: Boolean, isCarousel: Boolean, actions: Expan
             FooterChip(Icons.Rounded.Settings, "설정", actions.onOpenSettings)
         }
         Text(
-            text = if (isCarousel) "위아래로 돌려 고르고 가운데를 탭 · 길게 눌러 체크" else "탭해서 열기 · 길게 눌러 체크",
+            text = if (isCarousel) "위아래로 돌려 고르고 가운데를 탭 · 길게 눌러 체크" else "탭해서 열기 · 길게 눌러 체크 (루틴 앱)",
             color = Color.White.copy(alpha = 0.75f),
             style = MaterialTheme.typography.labelSmall,
             modifier = Modifier.padding(top = 4.dp)
@@ -356,7 +411,7 @@ private fun WheelCarousel(state: OverlayState, alignRight: Boolean, actions: Exp
             .width(HeadDimens.CardWidth)
             .height(HeadDimens.ItemHeight * (HeadDimens.SIDE_ITEMS * 2 + 1))
     ) {
-        itemsIndexed(state.entries, key = { _, e -> e.packageName }) { index, entry ->
+        itemsIndexed(state.entries, key = { _, e -> e.key }) { index, entry ->
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -377,7 +432,7 @@ private fun WheelCarousel(state: OverlayState, alignRight: Boolean, actions: Exp
             ) {
                 CarouselCard(
                     entry = entry,
-                    badge = state.badges[entry.packageName],
+                    badge = state.badgeFor(entry),
                     selected = index == centerIndex,
                     modifier = Modifier.combinedClickable(
                         onClick = {
@@ -423,10 +478,10 @@ private fun ContainerList(state: OverlayState, actions: ExpandedActions) {
             .heightIn(max = containerHeight(state.entries.size))
     ) {
         LazyColumn(contentPadding = PaddingValues(8.dp)) {
-            itemsIndexed(state.entries, key = { _, e -> e.packageName }) { _, entry ->
+            itemsIndexed(state.entries, key = { _, e -> e.key }) { _, entry ->
                 EntryRow(
                     entry = entry,
-                    badge = state.badges[entry.packageName],
+                    badge = state.badgeFor(entry),
                     iconSize = 36.dp,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -449,7 +504,7 @@ private fun ContainerList(state: OverlayState, actions: ExpandedActions) {
 private fun EntryRow(entry: ChatHeadEntry, badge: Badge?, iconSize: Dp, modifier: Modifier) {
     Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         Box {
-            AppIcon(entry.packageName, entry.label, iconSize)
+            ChatHeadItemIcon(entry.kind, entry.packageName, entry.label, iconSize)
             if (badge != null) {
                 BadgeDot(badge, modifier = Modifier.align(Alignment.TopEnd).offset(x = 6.dp, y = (-4).dp))
             }
@@ -464,10 +519,12 @@ private fun EntryRow(entry: ChatHeadEntry, badge: Badge?, iconSize: Dp, modifier
                 overflow = TextOverflow.Ellipsis
             )
             Text(
-                text = when (entry.isChecked) {
-                    true -> "${entry.routineName} · 확인함"
-                    false -> "${entry.routineName} · 확인 전"
-                    null -> "고정 앱"
+                text = when {
+                    entry.kind == ChatHeadKind.FOLDER -> "폴더 · ${entry.childCount}개"
+                    entry.kind == ChatHeadKind.LINK -> entry.url?.let { LinkUtils.hostOf(it) } ?: "웹사이트"
+                    entry.isChecked == true -> "${entry.routineName} · 확인함"
+                    entry.isChecked == false -> "${entry.routineName} · 확인 전"
+                    else -> "고정 앱"
                 },
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -475,7 +532,15 @@ private fun EntryRow(entry: ChatHeadEntry, badge: Badge?, iconSize: Dp, modifier
                 overflow = TextOverflow.Ellipsis
             )
         }
-        CheckIndicator(entry.isChecked)
+        if (entry.kind == ChatHeadKind.FOLDER) {
+            Icon(
+                Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                contentDescription = "폴더 열기",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        } else {
+            CheckIndicator(entry.isChecked)
+        }
     }
 }
 
@@ -501,20 +566,21 @@ private fun CheckIndicator(checked: Boolean?) {
 }
 
 @Composable
-private fun EmptyCard(onManageApps: () -> Unit, modifier: Modifier) {
+private fun EmptyCard(inFolder: Boolean, onManageApps: () -> Unit, modifier: Modifier) {
     Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, modifier = modifier.padding(4.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("챗헤드에 띄울 앱이 없어요", style = MaterialTheme.typography.titleSmall)
+            Text(if (inFolder) "빈 폴더예요" else "챗헤드에 띄울 항목이 없어요", style = MaterialTheme.typography.titleSmall)
             Spacer(Modifier.height(4.dp))
             Text(
-                "자주 쓰는 앱을 추가하면 여기서 바로 열 수 있어요.",
+                if (inFolder) "앱 관리에서 이 폴더에 앱이나 웹사이트를 넣어 보세요."
+                else "자주 쓰는 앱·웹사이트를 추가하거나 폴더로 묶어 두면 여기서 바로 열 수 있어요.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(10.dp))
             Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.primary, onClick = onManageApps) {
                 Text(
-                    "앱 추가하기",
+                    "추가하러 가기",
                     color = MaterialTheme.colorScheme.onPrimary,
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)

@@ -28,6 +28,7 @@ import javax.inject.Inject
  * 루틴 알람 수신.
  *  1) 다음 회차 알람 다시 등록
  *  2) "○○ 루틴 시간이에요" 알림 표시 (챗헤드 열기 / N분 후 다시 버튼)
+ *     — 루틴의 "시작 알림"이 꺼져 있으면 건너뜀. 소리/진동은 설정의 알림 방식에 맞는 채널로 결정
  *  3) 챗헤드 띄우기 — 자동 시작이 켜진 루틴이면 바로 펼쳐서 루틴 앱을 보여줌
  */
 @AndroidEntryPoint
@@ -53,8 +54,10 @@ class RoutineAlarmReceiver : BroadcastReceiver() {
                         val rwa = routineRepository.getRoutineWithApps(routineId) ?: return@launch
                         if (!rwa.routine.isEnabled) return@launch
                         if (intent.action == RoutineAlarmScheduler.ACTION_FIRE) scheduler.schedule(rwa.routine)
-                        showNotification(context, rwa)
                         val settings = settingsRepository.getSettings()
+                        if (rwa.routine.notifyEnabled) {
+                            showNotification(context, rwa, NotificationChannels.routineChannel(settings.alertMode))
+                        }
                         if (rwa.routine.autoStart) settingsRepository.setEnabled(true)
                         if (rwa.routine.autoStart || settings.enabled) {
                             withContext(Dispatchers.Main) {
@@ -69,7 +72,7 @@ class RoutineAlarmReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun showNotification(context: Context, rwa: RoutineWithApps) {
+    private fun showNotification(context: Context, rwa: RoutineWithApps, channelId: String) {
         if (!PermissionUtils.hasNotificationPermission(context)) return
         NotificationChannels.ensure(context)
         val routine = rwa.routine
@@ -86,7 +89,7 @@ class RoutineAlarmReceiver : BroadcastReceiver() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
 
-        val builder = NotificationCompat.Builder(context, NotificationChannels.ROUTINE)
+        val builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("⏰ ${routine.name} 시간이에요 (${TimeText.display(routine.startTime)})")
             .setContentText(if (apps.isBlank()) "루틴을 시작해 보세요" else "확인할 앱: $apps")

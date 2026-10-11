@@ -71,9 +71,7 @@ object PermissionUtils {
     fun appDetailsIntent(context: Context): Intent =
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}"))
 
-    /** 앱을 쓰기 위해 반드시 필요한 권한이 모두 있는지 */
+    /** 앱을 쓰기 위해 반드시 필요한 권한이 모두 있는지 (v5부터 오버레이만 필수, 알림 관련은 선택) */
     fun requiredPermissionsGranted(context: Context): Boolean =
-        hasOverlayPermission(context) &&
-            hasNotificationPermission(context) &&
-            canScheduleExactAlarms(context)
+        hasOverlayPermission(context)
 }

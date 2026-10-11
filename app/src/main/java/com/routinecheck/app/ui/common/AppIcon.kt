@@ -8,6 +8,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Folder
+import androidx.compose.material.icons.rounded.Language
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +30,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
 import com.routinecheck.app.data.repository.Badge
+import com.routinecheck.app.domain.ChatHeadKind
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.routinecheck.app.ui.theme.Brand
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -98,5 +104,45 @@ fun BadgeDot(badge: Badge, modifier: Modifier = Modifier, minSize: Dp = 18.dp) {
             fontWeight = FontWeight.Bold,
             maxLines = 1
         )
+    }
+}
+
+/** 챗헤드 항목 아이콘: 앱은 실제 아이콘, 폴더·웹사이트는 모양 아이콘 */
+@Composable
+fun ChatHeadItemIcon(
+    kind: ChatHeadKind,
+    packageName: String?,
+    label: String,
+    size: Dp,
+    modifier: Modifier = Modifier
+) {
+    when (kind) {
+        ChatHeadKind.APP ->
+            AppIcon(packageName.orEmpty(), label, size, modifier)
+        ChatHeadKind.FOLDER -> ShapeIcon(
+            Icons.Rounded.Folder,
+            MaterialTheme.colorScheme.tertiaryContainer, MaterialTheme.colorScheme.onTertiaryContainer, label, size, modifier
+        )
+        ChatHeadKind.LINK -> ShapeIcon(
+            Icons.Rounded.Language,
+            MaterialTheme.colorScheme.secondaryContainer, MaterialTheme.colorScheme.onSecondaryContainer, label, size, modifier
+        )
+    }
+}
+
+@Composable
+private fun ShapeIcon(
+    icon: ImageVector,
+    container: Color,
+    content: Color,
+    label: String,
+    size: Dp,
+    modifier: Modifier
+) {
+    Box(
+        modifier = modifier.size(size).background(container, RoundedCornerShape(size / 4)),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(icon, contentDescription = label, tint = content, modifier = Modifier.size(size * 0.6f))
     }
 }

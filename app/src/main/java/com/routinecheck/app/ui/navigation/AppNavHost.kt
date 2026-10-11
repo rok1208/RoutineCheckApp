@@ -25,7 +25,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.routinecheck.app.ui.chatheadapps.ChatHeadAppsScreen
 import com.routinecheck.app.ui.home.HomeScreen
-import com.routinecheck.app.ui.memo.MemoScreen
 import com.routinecheck.app.ui.routineedit.RoutineEditScreen
 import com.routinecheck.app.ui.routines.RoutinesScreen
 import com.routinecheck.app.ui.settings.SettingsScreen
@@ -38,10 +37,8 @@ object Routes {
     const val CHATHEAD_APPS = "chathead_apps"
     const val SETTINGS = "settings"
     const val ROUTINE_EDIT = "routine_edit?routineId={routineId}"
-    const val MEMO = "memo/{date}"
 
     fun routineEdit(routineId: Long? = null) = "routine_edit?routineId=${routineId ?: -1L}"
-    fun memo(date: String) = "memo/$date"
 }
 
 private data class Tab(val route: String, val label: String, val icon: ImageVector)
@@ -91,7 +88,6 @@ fun AppRoot(pendingRoute: String?, onRouteConsumed: () -> Unit) {
                 HomeScreen(
                     onOpenRoutine = { navController.navigate(Routes.routineEdit(it)) },
                     onNewRoutine = { navController.navigate(Routes.routineEdit()) },
-                    onOpenMemo = { navController.navigate(Routes.memo(it)) },
                     onManageChatHeadApps = { navController.navigate(Routes.CHATHEAD_APPS) },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) }
                 )
@@ -117,12 +113,6 @@ fun AppRoot(pendingRoute: String?, onRouteConsumed: () -> Unit) {
                     onBack = { navController.popBackStack() },
                     onManageChatHeadApps = { navController.navigate(Routes.CHATHEAD_APPS) }
                 )
-            }
-            composable(
-                Routes.MEMO,
-                arguments = listOf(navArgument("date") { type = NavType.StringType })
-            ) {
-                MemoScreen(onBack = { navController.popBackStack() })
             }
         }
     }

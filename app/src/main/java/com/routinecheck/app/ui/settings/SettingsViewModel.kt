@@ -7,6 +7,7 @@ import android.provider.Settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routinecheck.app.chathead.ChatHeadController
+import com.routinecheck.app.data.repository.AlertMode
 import com.routinecheck.app.data.repository.ChatHeadSettings
 import com.routinecheck.app.data.repository.ChatHeadSettingsRepository
 import com.routinecheck.app.data.repository.ChatHeadStyle
@@ -57,6 +58,7 @@ class SettingsViewModel @Inject constructor(
     fun setOpacity(value: Float) = viewModelScope.launch { repository.setOpacity(value) }
     fun setOnComplete(behavior: OnCompleteBehavior) = viewModelScope.launch { repository.setOnCompleteBehavior(behavior) }
     fun setEdgeSide(side: EdgeSide) = viewModelScope.launch { repository.setEdgeSide(side) }
+    fun setAlertMode(mode: AlertMode) = viewModelScope.launch { repository.setAlertMode(mode) }
 
     fun setIcon(uri: Uri) = viewModelScope.launch {
         val saved = withContext(Dispatchers.IO) { ChatHeadIconStore.save(context, uri) }
@@ -74,12 +76,12 @@ class SettingsViewModel @Inject constructor(
             PermissionUtils.hasOverlayPermission(context), PermissionUtils.overlayPermissionIntent(context)
         ),
         PermissionItem(
-            "알림", "루틴 시간 알림을 보내요", true,
+            "알림", "루틴 시작 알림을 보내요", false,
             PermissionUtils.hasNotificationPermission(context),
             Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
         ),
         PermissionItem(
-            "정확한 알람", "루틴 시각에 늦지 않게 알려요", true,
+            "정확한 알람", "루틴 시각에 늦지 않게 알려요", false,
             PermissionUtils.canScheduleExactAlarms(context), PermissionUtils.exactAlarmIntent(context)
         ),
         PermissionItem(

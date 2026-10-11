@@ -1,6 +1,8 @@
 package com.routinecheck.app.ui.routineedit
 
 import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -25,11 +27,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routinecheck.app.ui.apppicker.AppPickerDialog
 import com.routinecheck.app.ui.common.AppIcon
 import com.routinecheck.app.ui.common.SectionHeader
+import com.routinecheck.app.ui.common.TimeInput
+import com.routinecheck.app.util.PermissionUtils
 import com.routinecheck.app.util.DayMask
 import com.routinecheck.app.util.SystemAlarmLinker
 import com.routinecheck.app.util.TimeText
 
-/** ⑧ 루틴 만들기/수정: 이름, 시각, 반복 요일, 챗헤드 자동 펼침, 시계 알람 연동, 스누즈, 등록 앱 */
+/** ⑧ 루틴 만들기/수정: 이름, 시각(직접 입력), 반복 요일, 등록 앱, 시작 알림(선택)·스누즈, 챗헤드 자동 펼침, 시계 알람 연동 */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun RoutineEditScreen(
@@ -38,7 +42,6 @@ fun RoutineEditScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    var showTimePicker by remember { mutableStateOf(false) }
     var showAppPicker by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
 
@@ -96,13 +99,16 @@ fun RoutineEditScreen(
             )
 
             SectionHeader("시작 시각")
-            OutlinedCard(onClick = { showTimePicker = true }, modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    TimeText.display(TimeText.format(state.hour, state.minute)),
-                    style = MaterialTheme.typography.displaySmall,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(20.dp)
-                )
+            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    TimeInput(hour = state.hour, minute = state.minute, onChange = viewModel::setTime)
+                    Text(
+                        "숫자를 눌러 직접 입력하세요 · ${TimeText.display(TimeText.format(state.hour, state.minute))}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
             }
 
             SectionHeader("반복 요일")
@@ -156,38 +162,36 @@ fun RoutineEditScreen(
                 }
             }
 
+            SectionHeader("알림")
+            ToggleRow("시작 알림", "루틴 시각에 알림을 보내요. 소리·진동 방식은 설정에서 바꿀 수 있어요", state.notifyEnabled, viewModel::setNotifyEnabled)
+            if (state.notifyEnabled && !PermissionUtils.hasNotificationPermission(context)) {
+                TextButton(onClick = {
+                    runCatching {
+                        context.startActivity(
+                            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                        )
+                    }
+                }) { Text("알림 권한이 꺼져 있어요 — 허용하러 가기") }
+            }
+            if (state.notifyEnabled) {
+                Text("다시 알림 (스누즈)", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 12.dp))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(null, 5, 10, 15, 30).forEach { minutes ->
+                        FilterChip(
+                            selected = state.snoozeMinutes == minutes,
+                            onClick = { viewModel.setSnooze(minutes) },
+                            label = { Text(if (minutes == null) "사용 안 함" else "${minutes}분") }
+                        )
+                    }
+                }
+            }
+
             SectionHeader("동작")
             ToggleRow("챗헤드 자동 펼치기", "루틴 시각이 되면 챗헤드가 펼쳐지며 루틴 앱을 보여줘요", state.autoStart, viewModel::setAutoStart)
             ToggleRow("시계 앱 알람과 연동", "저장할 때 시계 앱에도 같은 시각의 알람을 만들어요", state.alarmLinked, viewModel::setAlarmLinked)
             ToggleRow("루틴 사용", "끄면 알림과 챗헤드 우선 표시가 멈춰요", state.isEnabled, viewModel::setEnabled)
-
-            Text("다시 알림 (스누즈)", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 12.dp))
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                listOf(null, 5, 10, 15, 30).forEach { minutes ->
-                    FilterChip(
-                        selected = state.snoozeMinutes == minutes,
-                        onClick = { viewModel.setSnooze(minutes) },
-                        label = { Text(if (minutes == null) "사용 안 함" else "${minutes}분") }
-                    )
-                }
-            }
             Spacer(Modifier.height(48.dp))
         }
-    }
-
-    if (showTimePicker) {
-        val pickerState = rememberTimePickerState(initialHour = state.hour, initialMinute = state.minute, is24Hour = false)
-        AlertDialog(
-            onDismissRequest = { showTimePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    viewModel.setTime(pickerState.hour, pickerState.minute)
-                    showTimePicker = false
-                }) { Text("확인") }
-            },
-            dismissButton = { TextButton(onClick = { showTimePicker = false }) { Text("취소") } },
-            text = { TimePicker(state = pickerState) }
-        )
     }
 
     if (showAppPicker) {

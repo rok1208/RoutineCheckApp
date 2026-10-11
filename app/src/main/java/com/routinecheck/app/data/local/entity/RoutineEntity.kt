@@ -31,6 +31,9 @@ data class RoutineEntity(
 
     val isEnabled: Boolean = true,
 
+    /** v5: 시작 시각 알림을 보낼지 (선택). 꺼도 챗헤드 우선 표시·자동 펼침은 그대로 동작 */
+    val notifyEnabled: Boolean = true,
+
     val createdAt: Long = System.currentTimeMillis(),
 
     val updatedAt: Long = System.currentTimeMillis()

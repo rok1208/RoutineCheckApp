@@ -4,9 +4,8 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.routinecheck.app.chathead.ChatHeadController
-import com.routinecheck.app.data.local.entity.ChatHeadAppEntity
 import com.routinecheck.app.data.repository.Badge
-import com.routinecheck.app.data.repository.ChatHeadAppRepository
+import com.routinecheck.app.data.repository.ChatHeadItemRepository
 import com.routinecheck.app.data.repository.ChatHeadSettings
 import com.routinecheck.app.data.repository.ChatHeadSettingsRepository
 import com.routinecheck.app.data.repository.MemoRepository
@@ -14,17 +13,30 @@ import com.routinecheck.app.data.repository.NotificationBadgeRepository
 import com.routinecheck.app.data.repository.RoutineRepository
 import com.routinecheck.app.data.repository.TodayRepository
 import com.routinecheck.app.data.repository.TodaySnapshot
+import com.routinecheck.app.data.repository.toPinned
+import com.routinecheck.app.domain.ChatHeadEntry
+import com.routinecheck.app.domain.ChatHeadOrdering
 import com.routinecheck.app.domain.RoutineSchedule
 import com.routinecheck.app.util.DateKey
 import com.routinecheck.app.util.PermissionUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import javax.inject.Inject
 
@@ -32,6 +44,7 @@ import javax.inject.Inject
 data class WeekDayCell(
     val date: LocalDate,
     val isToday: Boolean,
+    val isSelected: Boolean,
     val hasMemo: Boolean,
     val routineCount: Int
 )
@@ -42,56 +55,140 @@ data class PermissionWarnings(
     val exactAlarmMissing: Boolean = false,
     val listenerMissing: Boolean = false
 ) {
-    val requiredMissing: Boolean get() = overlayMissing || notificationMissing || exactAlarmMissing
+    /** v5부터 필수 권한은 오버레이뿐 (알림·정확한 알람은 선택) */
+    val requiredMissing: Boolean get() = overlayMissing
 }
 
+/** 홈 화면 안의 메모지 (요일을 누르면 열림) */
+data class MemoPanelState(
+    val date: LocalDate,
+    val open: Boolean = false,
+    val text: String = "",
+    val loaded: Boolean = false,
+    val saved: Boolean = true
+)
+
 data class HomeUiState(
+    /** 오늘 기준 (챗헤드 카드의 "진행 중 루틴" 표시용) */
     val today: TodaySnapshot? = null,
+    /** 주간 달력에서 고른 날짜의 루틴 (기본은 오늘) */
+    val day: TodaySnapshot? = null,
     val settings: ChatHeadSettings = ChatHeadSettings(),
-    val pinnedApps: List<ChatHeadAppEntity> = emptyList(),
+    /** 챗헤드 최상단에 보이는 직접 넣은 항목 (폴더·앱·웹사이트) */
+    val pinnedEntries: List<ChatHeadEntry> = emptyList(),
     val badges: Map<String, Badge> = emptyMap(),
     val week: List<WeekDayCell> = emptyList(),
     val permissions: PermissionWarnings = PermissionWarnings()
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
-    todayRepository: TodayRepository,
+    private val todayRepository: TodayRepository,
     private val routineRepository: RoutineRepository,
     private val settingsRepository: ChatHeadSettingsRepository,
-    chatHeadAppRepository: ChatHeadAppRepository,
+    chatHeadItemRepository: ChatHeadItemRepository,
     badgeRepository: NotificationBadgeRepository,
-    memoRepository: MemoRepository
+    private val memoRepository: MemoRepository
 ) : ViewModel() {
 
     private val weekStart = DateKey.weekStart(LocalDate.now())
     private val permissions = MutableStateFlow(readPermissions())
+    private val selectedDate = MutableStateFlow(LocalDate.now())
+
+    private val _memo = MutableStateFlow(MemoPanelState(date = LocalDate.now()))
+    val memo: StateFlow<MemoPanelState> = _memo.asStateFlow()
+    private var saveJob: Job? = null
 
     private val week = combine(
         memoRepository.observeMemoDates(weekStart, weekStart.plusDays(6)),
-        routineRepository.getRoutines()
-    ) { memoDates, routines ->
+        routineRepository.getRoutines(),
+        selectedDate
+    ) { memoDates, routines, selected ->
         (0L..6L).map { offset ->
             val date = weekStart.plusDays(offset)
             WeekDayCell(
                 date = date,
                 isToday = date == LocalDate.now(),
+                isSelected = date == selected,
                 hasMemo = date in memoDates,
                 routineCount = routines.count { it.isEnabled && RoutineSchedule.isScheduledOn(it.daysOfWeek, date) }
             )
         }
     }
 
+    private val pinned = chatHeadItemRepository.observeItems()
+        .map { rows -> ChatHeadOrdering.build(emptyList(), rows.map { it.toPinned() }) }
+
     val uiState: StateFlow<HomeUiState> = combine(
-        todayRepository.observeToday(),
+        combine(todayRepository.observeToday(), selectedDate.flatMapLatest { todayRepository.observeDay(it) }) { t, d -> t to d },
         settingsRepository.observeSettings(),
-        chatHeadAppRepository.observeApps(),
+        pinned,
         combine(badgeRepository.observeBadges(), week) { b, w -> b to w },
         permissions
-    ) { today, settings, pinned, (badges, weekCells), perms ->
-        HomeUiState(today, settings, pinned, badges, weekCells, perms)
+    ) { (today, day), settings, entries, (badges, weekCells), perms ->
+        HomeUiState(today, day, settings, entries, badges, weekCells, perms)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
+
+    // ---------------------------------------------------------------- 요일 선택 + 메모
+
+    /** 요일을 누르면: 그 날짜의 루틴을 보여주고 메모지를 엶. 열린 날짜를 다시 누르면 메모지만 닫힘 */
+    fun selectDate(date: LocalDate) {
+        val current = _memo.value
+        if (date == current.date && current.open) {
+            closeMemo()
+            return
+        }
+        selectedDate.value = date
+        viewModelScope.launch {
+            saveMemoNow()
+            val text = memoRepository.getMemo(date)
+            _memo.value = MemoPanelState(date = date, open = true, text = text, loaded = true)
+        }
+    }
+
+    fun closeMemo() {
+        flushMemo()
+        _memo.update { it.copy(open = false) }
+    }
+
+    /** 다시 오늘 루틴 보기 */
+    fun backToToday() {
+        flushMemo()
+        selectedDate.value = LocalDate.now()
+        _memo.update { if (it.date == LocalDate.now()) it else it.copy(open = false) }
+    }
+
+    /** 입력할 때마다 0.6초 뒤 자동 저장 */
+    fun onMemoChange(text: String) {
+        _memo.update { it.copy(text = text, saved = false) }
+        saveJob?.cancel()
+        saveJob = viewModelScope.launch {
+            delay(600)
+            saveMemoNow()
+        }
+    }
+
+    fun flushMemo() {
+        saveJob?.cancel()
+        viewModelScope.launch { saveMemoNow() }
+    }
+
+    private suspend fun saveMemoNow() = withContext(NonCancellable) {
+        val s = _memo.value
+        if (!s.loaded || s.saved) return@withContext
+        memoRepository.saveMemo(s.date, s.text)
+        _memo.update { if (it.date == s.date && it.text == s.text) it.copy(saved = true) else it }
+    }
+
+    override fun onCleared() {
+        // 화면이 사라질 때 마지막 입력도 저장 (viewModelScope는 이미 취소된 상태)
+        val s = _memo.value
+        if (s.loaded && !s.saved) runBlocking { memoRepository.saveMemo(s.date, s.text) }
+    }
+
+    // ---------------------------------------------------------------- 그 외
 
     /** 설정 화면 등에서 돌아왔을 때 권한 상태 다시 읽기 */
     fun refreshPermissions() {
@@ -105,9 +202,12 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    /** 고른 날짜의 체크 (앞으로의 날짜는 화면에서 막음) */
     fun toggleCheck(routineId: Long, packageName: String, checked: Boolean) {
+        val date = selectedDate.value
+        if (date.isAfter(LocalDate.now())) return
         viewModelScope.launch {
-            routineRepository.setChecked(routineId, packageName, DateKey.today(), checked)
+            routineRepository.setChecked(routineId, packageName, DateKey.of(date), checked)
         }
     }
 

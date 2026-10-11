@@ -24,6 +24,13 @@ enum class ChatHeadStyle(val label: String, val description: String) {
     CONTAINER("컨테이너 (목록형)", "사각형 패널에 앱을 한 번에 나열")
 }
 
+/** 루틴 시작 알림 방식 (휴대폰이 무음·진동 모드면 휴대폰 설정이 우선) */
+enum class AlertMode(val label: String) {
+    SOUND_VIBRATE("소리 + 진동"),
+    SOUND("소리"),
+    VIBRATE("진동")
+}
+
 /** 화면/서비스 코드에서 쓰는 챗헤드 설정 (enum으로 타입 안전하게) */
 data class ChatHeadSettings(
     val opacity: Float = 1.0f,
@@ -31,7 +38,8 @@ data class ChatHeadSettings(
     val iconUri: String? = null,
     val edgeSide: EdgeSide = EdgeSide.RIGHT,
     val uiStyle: ChatHeadStyle = ChatHeadStyle.CAROUSEL,
-    val enabled: Boolean = true
+    val enabled: Boolean = true,
+    val alertMode: AlertMode = AlertMode.SOUND_VIBRATE
 )
 
 /**
@@ -64,6 +72,8 @@ class ChatHeadSettingsRepository @Inject constructor(
 
     suspend fun setEnabled(enabled: Boolean) = update { it.copy(enabled = enabled) }
 
+    suspend fun setAlertMode(mode: AlertMode) = update { it.copy(alertMode = mode) }
+
     private suspend fun update(transform: (ChatHeadSettings) -> ChatHeadSettings) {
         dao.save(transform(getSettings()).toEntity())
     }
@@ -81,7 +91,8 @@ private fun ChatHeadSettingsEntity.toModel() = ChatHeadSettings(
     iconUri = iconUri,
     edgeSide = runCatching { EdgeSide.valueOf(edgeSide) }.getOrDefault(EdgeSide.RIGHT),
     uiStyle = runCatching { ChatHeadStyle.valueOf(uiStyle) }.getOrDefault(ChatHeadStyle.CAROUSEL),
-    enabled = enabled
+    enabled = enabled,
+    alertMode = runCatching { AlertMode.valueOf(alertMode) }.getOrDefault(AlertMode.SOUND_VIBRATE)
 )
 
 private fun ChatHeadSettings.toEntity() = ChatHeadSettingsEntity(
@@ -90,5 +101,6 @@ private fun ChatHeadSettings.toEntity() = ChatHeadSettingsEntity(
     iconUri = iconUri,
     edgeSide = edgeSide.name,
     uiStyle = uiStyle.name,
-    enabled = enabled
+    enabled = enabled,
+    alertMode = alertMode.name
 )

@@ -33,6 +33,8 @@ data class RoutineEditUiState(
     /** null이면 스누즈 없음 */
     val snoozeMinutes: Int? = 10,
     val isEnabled: Boolean = true,
+    /** 시작 시각 알림 받기 (선택) */
+    val notifyEnabled: Boolean = true,
     val apps: List<InstalledAppInfo> = emptyList(),
     val nameError: Boolean = false,
     val daysError: Boolean = false
@@ -79,6 +81,7 @@ class RoutineEditViewModel @Inject constructor(
                     alarmLinked = r.alarmLinked,
                     snoozeMinutes = r.snoozeMinutes,
                     isEnabled = r.isEnabled,
+                    notifyEnabled = r.notifyEnabled,
                     apps = existing.apps.map { InstalledAppInfo(it.packageName, it.appLabel) }
                 )
             }
@@ -86,13 +89,14 @@ class RoutineEditViewModel @Inject constructor(
     }
 
     fun setName(value: String) = _state.update { it.copy(name = value.take(30), nameError = false) }
-    fun setTime(hour: Int, minute: Int) = _state.update { it.copy(hour = hour, minute = minute) }
+    fun setTime(hour: Int, minute: Int) = _state.update { it.copy(hour = hour.coerceIn(0, 23), minute = minute.coerceIn(0, 59)) }
     fun toggleDay(day: DayOfWeek) = _state.update { it.copy(daysOfWeek = DayMask.toggle(it.daysOfWeek, day), daysError = false) }
     fun setDays(mask: Int) = _state.update { it.copy(daysOfWeek = mask, daysError = false) }
     fun setAutoStart(value: Boolean) = _state.update { it.copy(autoStart = value) }
     fun setAlarmLinked(value: Boolean) = _state.update { it.copy(alarmLinked = value) }
     fun setSnooze(minutes: Int?) = _state.update { it.copy(snoozeMinutes = minutes) }
     fun setEnabled(value: Boolean) = _state.update { it.copy(isEnabled = value) }
+    fun setNotifyEnabled(value: Boolean) = _state.update { it.copy(notifyEnabled = value) }
     fun setApps(apps: List<InstalledAppInfo>) = _state.update { it.copy(apps = apps) }
     fun removeApp(packageName: String) = _state.update { s -> s.copy(apps = s.apps.filterNot { it.packageName == packageName }) }
 
@@ -122,7 +126,8 @@ class RoutineEditViewModel @Inject constructor(
                 autoStart = s.autoStart,
                 alarmLinked = s.alarmLinked,
                 snoozeMinutes = s.snoozeMinutes,
-                isEnabled = s.isEnabled
+                isEnabled = s.isEnabled,
+                notifyEnabled = s.notifyEnabled
             )
             val apps = s.apps.map { RoutineAppEntity(routineId = 0, packageName = it.packageName, appLabel = it.label) }
             val savedId = routineRepository.saveRoutine(routine, apps)

@@ -9,8 +9,13 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.EditNote
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.WarningAmber
@@ -22,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -32,7 +38,9 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routinecheck.app.data.repository.TodayRoutine
 import com.routinecheck.app.onboarding.OnboardingActivity
+import com.routinecheck.app.domain.ChatHeadKind
 import com.routinecheck.app.ui.common.AppIcon
+import com.routinecheck.app.ui.common.ChatHeadItemIcon
 import com.routinecheck.app.ui.common.BadgeDot
 import com.routinecheck.app.ui.common.ChatHeadPreview
 import com.routinecheck.app.ui.common.SectionHeader
@@ -44,24 +52,25 @@ import com.routinecheck.app.util.TimeText
 import java.time.LocalDate
 
 /**
- * ① 홈. 챗헤드가 앱의 중심이므로 맨 위에 챗헤드 카드(켜기/끄기, 등록 앱)를 두고,
- * 그 아래에 보조 기능인 "오늘의 루틴"(직접 체크 가능)과 주간 메모 달력을 배치합니다.
+ * ① 홈. 챗헤드가 앱의 중심이므로 맨 위에 챗헤드 카드(켜기/끄기, 등록 항목)를 두고,
+ * 그 아래에 주간 달력 → (요일을 누르면) 그 날의 메모지 → 그 날의 루틴(직접 체크 가능)을 배치합니다.
  */
 @Composable
 fun HomeScreen(
     onOpenRoutine: (Long) -> Unit,
     onNewRoutine: () -> Unit,
-    onOpenMemo: (String) -> Unit,
     onManageChatHeadApps: () -> Unit,
     onOpenSettings: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val memo by viewModel.memo.collectAsStateWithLifecycle()
     val context = LocalContext.current
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshPermissions() }
+    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { viewModel.flushMemo() }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize().statusBarsPadding(),
+        modifier = Modifier.fillMaxSize().statusBarsPadding().imePadding(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
     ) {
         item {
@@ -93,25 +102,41 @@ fun HomeScreen(
 
         item {
             SectionHeader("이번 주")
-            WeekStrip(cells = state.week, onClick = { onOpenMemo(DateKey.of(it)) })
+            WeekStrip(cells = state.week, onClick = viewModel::selectDate)
         }
 
+        // 요일을 누르면 달력과 루틴 사이에 그 날의 메모지가 펼쳐짐
+        if (memo.open) {
+            item(key = "memo") {
+                MemoPaper(
+                    memo = memo,
+                    onChange = viewModel::onMemoChange,
+                    onClose = viewModel::closeMemo
+                )
+            }
+        }
+
+        val day = state.day
         item {
-            SectionHeader("오늘의 루틴") {
-                TextButton(onClick = onNewRoutine) {
-                    Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(4.dp))
-                    Text("루틴 만들기")
+            SectionHeader(dayTitle(day)) {
+                if (day != null && !day.isToday) {
+                    TextButton(onClick = viewModel::backToToday) { Text("오늘로") }
+                } else {
+                    TextButton(onClick = onNewRoutine) {
+                        Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(4.dp))
+                        Text("루틴 만들기")
+                    }
                 }
             }
         }
 
-        val routines = state.today?.routines.orEmpty()
-        if (state.today != null && routines.isEmpty()) {
+        val routines = day?.routines.orEmpty()
+        if (day != null && routines.isEmpty()) {
             item {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(20.dp)) {
-                        Text("오늘 예정된 루틴이 없어요", style = MaterialTheme.typography.titleSmall)
+                        Text(if (day.isToday) "오늘 예정된 루틴이 없어요" else "이 날 예정된 루틴이 없어요", style = MaterialTheme.typography.titleSmall)
                         Text(
                             "루틴을 만들면 시간에 맞춰 알려주고, 루틴 앱이 챗헤드 맨 앞에 올라와요.",
                             style = MaterialTheme.typography.bodySmall,
@@ -124,12 +149,81 @@ fun HomeScreen(
         items(routines, key = { it.routine.routineId }) { today ->
             TodayRoutineCard(
                 today = today,
+                isPast = day?.isPast == true,
+                canCheck = day?.isFuture != true,
                 onOpen = { onOpenRoutine(today.routine.routineId) },
                 onToggle = { pkg, checked -> viewModel.toggleCheck(today.routine.routineId, pkg, checked) }
             )
             Spacer(Modifier.height(10.dp))
         }
         item { Spacer(Modifier.height(24.dp)) }
+    }
+}
+
+/** "오늘의 루틴" / "10월 13일 (화) 루틴" */
+private fun dayTitle(day: com.routinecheck.app.data.repository.TodaySnapshot?): String {
+    if (day == null || day.isToday) return "오늘의 루틴"
+    val d = day.date
+    return "${d.monthValue}월 ${d.dayOfMonth}일 (${DayMask.shortName(d.dayOfWeek)}) 루틴"
+}
+
+/** 홈 안의 메모지: 바로 입력, 0.6초 뒤 자동 저장 */
+@Composable
+private fun MemoPaper(memo: MemoPanelState, onChange: (String) -> Unit, onClose: () -> Unit) {
+    val paper = Color(0xFFFFF4C9)
+    val ink = Color(0xFF3B3320)
+    Card(
+        colors = CardDefaults.cardColors(containerColor = paper),
+        shape = RoundedCornerShape(18.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+    ) {
+        Column(Modifier.padding(start = 16.dp, end = 8.dp, top = 8.dp, bottom = 16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Rounded.EditNote, contentDescription = null, tint = ink)
+                Spacer(Modifier.width(6.dp))
+                val d = memo.date
+                Text(
+                    "${d.monthValue}월 ${d.dayOfMonth}일 (${DayMask.shortName(d.dayOfWeek)}) 메모",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    color = ink,
+                    modifier = Modifier.weight(1f)
+                )
+                Text(
+                    when {
+                        !memo.loaded -> ""
+                        memo.saved -> "저장됨"
+                        else -> "저장 중…"
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = ink.copy(alpha = 0.6f)
+                )
+                IconButton(onClick = onClose) { Icon(Icons.Rounded.Close, contentDescription = "메모 닫기", tint = ink) }
+            }
+            BasicTextField(
+                value = memo.text,
+                onValueChange = onChange,
+                enabled = memo.loaded,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = ink),
+                cursorBrush = SolidColor(ink),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(end = 8.dp)
+                    .heightIn(min = 120.dp),
+                decorationBox = { inner ->
+                    Box {
+                        if (memo.text.isEmpty()) {
+                            Text(
+                                "이 날의 할 일이나 생각을 적어 보세요",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = ink.copy(alpha = 0.4f)
+                            )
+                        }
+                        inner()
+                    }
+                }
+            )
+        }
     }
 }
 
@@ -148,7 +242,7 @@ private fun PermissionWarningCard(onFix: () -> Unit) {
             Icon(Icons.Rounded.WarningAmber, contentDescription = null, tint = MaterialTheme.colorScheme.onErrorContainer)
             Spacer(Modifier.width(12.dp))
             Text(
-                "필수 권한이 꺼져 있어 챗헤드나 알림이 동작하지 않을 수 있어요.",
+                "'다른 앱 위에 표시' 권한이 꺼져 있어 챗헤드가 동작하지 않아요.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onErrorContainer,
                 modifier = Modifier.weight(1f)
@@ -210,23 +304,38 @@ private fun ChatHeadCard(
                 }
 
                 Spacer(Modifier.height(14.dp))
-                if (state.pinnedApps.isEmpty()) {
+                if (state.pinnedEntries.isEmpty()) {
                     Text(
-                        "자주 쓰는 앱을 등록하면 어느 화면에서든 챗헤드로 바로 열 수 있어요.",
+                        "자주 쓰는 앱·웹사이트를 등록하거나 폴더로 묶으면 어느 화면에서든 챗헤드로 바로 열 수 있어요.",
                         color = Color.White.copy(alpha = 0.9f),
                         style = MaterialTheme.typography.bodySmall
                     )
                 } else {
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        items(state.pinnedApps, key = { it.packageName }) { app ->
-                            Box {
-                                Box(
-                                    Modifier.size(48.dp).background(Color.White, RoundedCornerShape(14.dp)),
-                                    contentAlignment = Alignment.Center
-                                ) { AppIcon(app.packageName, app.appLabel, 36.dp) }
-                                state.badges[app.packageName]?.let {
-                                    BadgeDot(it, Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-4).dp))
+                        items(state.pinnedEntries, key = { it.key }) { entry ->
+                            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(56.dp)) {
+                                Box {
+                                    Box(
+                                        Modifier.size(48.dp).background(Color.White, RoundedCornerShape(14.dp)),
+                                        contentAlignment = Alignment.Center
+                                    ) { ChatHeadItemIcon(entry.kind, entry.packageName, entry.label, 36.dp) }
+                                    val badge = when (entry.kind) {
+                                        ChatHeadKind.APP -> entry.packageName?.let { state.badges[it] }
+                                        ChatHeadKind.FOLDER -> entry.folderPackages.mapNotNull { state.badges[it] }
+                                            .takeIf { it.isNotEmpty() }
+                                            ?.let { list -> com.routinecheck.app.data.repository.Badge(list.sumOf { it.count }, list.any { it.urgent }) }
+                                        ChatHeadKind.LINK -> null
+                                    }
+                                    badge?.let { BadgeDot(it, Modifier.align(Alignment.TopEnd).offset(x = 4.dp, y = (-4).dp)) }
                                 }
+                                Text(
+                                    entry.label,
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(top = 3.dp)
+                                )
                             }
                         }
                     }
@@ -237,7 +346,7 @@ private fun ChatHeadCard(
                     FilledTonalButton(onClick = onManageApps) {
                         Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("앱 관리")
+                        Text("항목 관리")
                     }
                     FilledTonalButton(onClick = onOpenSettings) {
                         Icon(Icons.Rounded.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -259,17 +368,22 @@ private fun WeekStrip(cells: List<WeekDayCell>, onClick: (LocalDate) -> Unit) {
                 modifier = Modifier
                     .weight(1f)
                     .clip(RoundedCornerShape(14.dp))
-                    .background(if (cell.isToday) selectedColor else MaterialTheme.colorScheme.surfaceVariant)
+                    .background(if (cell.isSelected) selectedColor else MaterialTheme.colorScheme.surfaceVariant)
+                    // 오늘이지만 다른 날을 보고 있으면 테두리로만 표시
+                    .then(
+                        if (cell.isToday && !cell.isSelected) Modifier.border(BorderStroke(2.dp, selectedColor), RoundedCornerShape(14.dp))
+                        else Modifier
+                    )
                     .clickable { onClick(cell.date) }
                     .padding(vertical = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val textColor = if (cell.isToday) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
+                val textColor = if (cell.isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface
                 Text(DayMask.shortName(cell.date.dayOfWeek), style = MaterialTheme.typography.labelSmall, color = textColor)
                 Text("${cell.date.dayOfMonth}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = textColor)
                 Spacer(Modifier.height(4.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-                    if (cell.routineCount > 0) Dot(if (cell.isToday) Color.White else Brand.Blue)
+                    if (cell.routineCount > 0) Dot(if (cell.isSelected) Color.White else Brand.Blue)
                     if (cell.hasMemo) Dot(Color(0xFFF5B83D))
                     if (cell.routineCount == 0 && !cell.hasMemo) Spacer(Modifier.size(6.dp))
                 }
@@ -277,7 +391,7 @@ private fun WeekStrip(cells: List<WeekDayCell>, onClick: (LocalDate) -> Unit) {
         }
     }
     Text(
-        "● 파랑: 루틴 있음  ● 노랑: 메모 있음 · 날짜를 누르면 메모를 쓸 수 있어요",
+        "● 파랑: 루틴 있음  ● 노랑: 메모 있음 · 날짜를 누르면 그 날의 메모와 루틴을 볼 수 있어요",
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 6.dp)
@@ -292,6 +406,8 @@ private fun Dot(color: Color) {
 @Composable
 private fun TodayRoutineCard(
     today: TodayRoutine,
+    isPast: Boolean,
+    canCheck: Boolean,
     onOpen: () -> Unit,
     onToggle: (String, Boolean) -> Unit
 ) {
@@ -309,6 +425,7 @@ private fun TodayRoutineCard(
                 }
                 when {
                     today.isComplete -> StatusChip("완료", Brand.Green.copy(alpha = 0.18f), Brand.Green)
+                    isPast -> StatusChip("미완료", MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer)
                     today.hasStarted -> StatusChip("진행 중", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer)
                     else -> StatusChip("예정", MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant)
                 }
@@ -340,7 +457,7 @@ private fun TodayRoutineCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(10.dp))
-                        .clickable { onToggle(app.packageName, !checked) }
+                        .clickable(enabled = canCheck) { onToggle(app.packageName, !checked) }
                         .padding(vertical = 4.dp)
                 ) {
                     AppIcon(app.packageName, app.appLabel, 28.dp)
@@ -352,7 +469,7 @@ private fun TodayRoutineCard(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f)
                     )
-                    Checkbox(checked = checked, onCheckedChange = { onToggle(app.packageName, it) })
+                    Checkbox(checked = checked, onCheckedChange = { onToggle(app.packageName, it) }, enabled = canCheck)
                 }
             }
         }

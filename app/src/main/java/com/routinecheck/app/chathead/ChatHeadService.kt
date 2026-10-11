@@ -5,7 +5,9 @@ import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
+import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.net.Uri
 import android.content.pm.ServiceInfo
 import android.content.res.Configuration
 import android.graphics.PixelFormat
@@ -39,7 +41,7 @@ import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.routinecheck.app.MainActivity
 import com.routinecheck.app.R
 import com.routinecheck.app.data.repository.AppRegistryRepository
-import com.routinecheck.app.data.repository.ChatHeadAppRepository
+import com.routinecheck.app.data.repository.ChatHeadItemRepository
 import com.routinecheck.app.data.repository.ChatHeadSettings
 import com.routinecheck.app.data.repository.ChatHeadSettingsRepository
 import com.routinecheck.app.data.repository.EdgeSide
@@ -48,7 +50,9 @@ import com.routinecheck.app.data.repository.OnCompleteBehavior
 import com.routinecheck.app.data.repository.RoutineRepository
 import com.routinecheck.app.data.repository.TodayRepository
 import com.routinecheck.app.data.repository.TodaySnapshot
+import com.routinecheck.app.data.repository.toPinned
 import com.routinecheck.app.domain.ChatHeadEntry
+import com.routinecheck.app.domain.ChatHeadKind
 import com.routinecheck.app.domain.ChatHeadOrdering
 import com.routinecheck.app.notification.NotificationChannels
 import com.routinecheck.app.ui.navigation.Routes
@@ -77,15 +81,15 @@ import kotlin.math.roundToInt
  *  - panelView : ⑤ 휠 캐러셀 / ⑥ 컨테이너 확장 화면 (전체 화면, 배경 어둡게)
  *  - trashView : 원형 아이콘을 드래그하는 동안만 화면 아래에 뜨는 제거 영역
  *
- * 표시할 앱 목록은 TodayRepository(진행 중 루틴) + 챗헤드 전용 목록 + 알림 배지를 합쳐서
- * ChatHeadOrdering 규칙("전용 목록 + 루틴 우선")으로 만듭니다.
+ * 표시할 목록은 TodayRepository(진행 중 루틴) + 챗헤드 항목(앱·웹사이트·폴더) + 알림 배지 + 열어 둔 폴더 경로를
+ * 합쳐서 ChatHeadOrdering 규칙("전용 목록 + 루틴 우선", 폴더 안에서는 그 폴더의 항목만)으로 만듭니다.
  */
 @AndroidEntryPoint
 class ChatHeadService : LifecycleService(), SavedStateRegistryOwner {
 
     @Inject lateinit var settingsRepository: ChatHeadSettingsRepository
     @Inject lateinit var todayRepository: TodayRepository
-    @Inject lateinit var chatHeadAppRepository: ChatHeadAppRepository
+    @Inject lateinit var chatHeadItemRepository: ChatHeadItemRepository
     @Inject lateinit var badgeRepository: NotificationBadgeRepository
     @Inject lateinit var routineRepository: RoutineRepository
     @Inject lateinit var appRegistry: AppRegistryRepository
@@ -95,6 +99,8 @@ class ChatHeadService : LifecycleService(), SavedStateRegistryOwner {
 
     private lateinit var windowManager: WindowManager
     private val state = MutableStateFlow(OverlayState())
+    /** 열어 둔 폴더 id 경로. 비어 있으면 최상단 */
+    private val folderIds = MutableStateFlow<List<Long>>(emptyList())
 
     private var headView: ComposeView? = null
     private lateinit var headParams: WindowManager.LayoutParams
@@ -194,34 +200,67 @@ class ChatHeadService : LifecycleService(), SavedStateRegistryOwner {
         lifecycleScope.launch {
             combine(
                 todayRepository.observeToday(),
-                chatHeadAppRepository.observeApps(),
+                chatHeadItemRepository.observeItems(),
                 badgeRepository.observeBadges(),
-                settingsRepository.observeSettings()
-            ) { today, pinned, badges, settings ->
+                settingsRepository.observeSettings(),
+                folderIds
+            ) { today, rows, badges, settings, path ->
                 latestToday = today
-                val entries = ChatHeadOrdering.build(
-                    activeRoutines = today.active.map { it.toActiveInput() },
-                    pinnedApps = pinned.map { it.packageName to it.appLabel }
-                )
+                val items = rows.map { it.toPinned() }
+                val activeInputs = today.active.map { it.toActiveInput() }
+                // 열어 둔 폴더가 지워졌으면 남아 있는 가장 깊은 폴더로
+                val crumbs = ChatHeadOrdering.pathTo(items, path.lastOrNull())
+                    .map { FolderCrumb(it.id, it.title) }
+                    .takeIf { c -> c.map { it.id } == path } ?: validPrefix(items, path)
+                val entries = ChatHeadOrdering.build(activeInputs, items, crumbs.lastOrNull()?.id)
+                val allPackages = activeInputs.flatMap { r -> r.apps.map { it.first } }.toSet() +
+                    items.mapNotNull { it.packageName }
                 val active = today.active
                 val progress = active.firstOrNull()?.let {
                     RoutineProgress(it.routine.name, it.done, it.total, extraCount = active.size - 1)
                 }
-                Quad(today, entries, badges, settings to progress)
-            }.collect { (today, entries, badges, settingsAndProgress) ->
-                val (settings, progress) = settingsAndProgress
-                if (!settings.enabled) {
+                Frame(today, entries, crumbs, allPackages, badges, settings, progress)
+            }.collect { f ->
+                if (!f.settings.enabled) {
                     stopSelf()
                     return@collect
                 }
-                loadIconIfChanged(settings)
-                state.update { it.copy(entries = entries, badges = badges, settings = settings, progress = progress) }
-                handleRoutineCompletion(today, settings)
+                loadIconIfChanged(f.settings)
+                if (f.crumbs.map { it.id } != folderIds.value) folderIds.value = f.crumbs.map { it.id }
+                state.update {
+                    it.copy(
+                        entries = f.entries, folderPath = f.crumbs, allPackages = f.allPackages,
+                        badges = f.badges, settings = f.settings, progress = f.progress
+                    )
+                }
+                handleRoutineCompletion(f.today, f.settings)
             }
         }
     }
 
-    private data class Quad<A, B, C, D>(val a: A, val b: B, val c: C, val d: D)
+    private data class Frame(
+        val today: TodaySnapshot,
+        val entries: List<ChatHeadEntry>,
+        val crumbs: List<FolderCrumb>,
+        val allPackages: Set<String>,
+        val badges: Map<String, com.routinecheck.app.data.repository.Badge>,
+        val settings: ChatHeadSettings,
+        val progress: RoutineProgress?
+    )
+
+    /** 경로 중 실제로 이어지는 앞부분만 남김 (중간 폴더가 지워졌거나 옮겨진 경우) */
+    private fun validPrefix(items: List<com.routinecheck.app.domain.PinnedItem>, path: List<Long>): List<FolderCrumb> {
+        val byId = items.associateBy { it.id }
+        val result = mutableListOf<FolderCrumb>()
+        var parent: Long? = null
+        for (id in path) {
+            val folder = byId[id] ?: break
+            if (folder.kind != ChatHeadKind.FOLDER || folder.parentId != parent) break
+            result += FolderCrumb(folder.id, folder.title)
+            parent = folder.id
+        }
+        return result
+    }
 
     private suspend fun loadIconIfChanged(settings: ChatHeadSettings) {
         if (settings.iconUri == lastIconUri) return
@@ -306,6 +345,8 @@ class ChatHeadService : LifecycleService(), SavedStateRegistryOwner {
                     onDismiss = ::collapse,
                     onLaunch = ::launchEntry,
                     onToggleCheck = ::toggleEntryCheck,
+                    onBack = { folderIds.update { it.dropLast(1) } },
+                    onTop = { folderIds.value = emptyList() },
                     onOpenApp = { openMainApp(null) },
                     onManageApps = { openMainApp(Routes.CHATHEAD_APPS) },
                     onOpenSettings = { openMainApp(Routes.SETTINGS) }
@@ -361,6 +402,7 @@ class ChatHeadService : LifecycleService(), SavedStateRegistryOwner {
     private fun collapse() {
         removeView(panelView)
         panelView = null
+        folderIds.value = emptyList() // 다음에 펼치면 최상단부터
         headView?.visibility = View.VISIBLE
         if (state.value.mode == HeadMode.EXPANDED) state.update { it.copy(mode = HeadMode.BUBBLE) }
     }
@@ -433,28 +475,53 @@ class ChatHeadService : LifecycleService(), SavedStateRegistryOwner {
     // ---------------------------------------------------------------- 앱 실행 / 체크
 
     private fun launchEntry(entry: ChatHeadEntry) {
-        val launched = appRegistry.launch(entry.packageName)
+        when (entry.kind) {
+            ChatHeadKind.FOLDER -> {
+                entry.itemId?.let { id -> folderIds.update { it + id } }
+                return
+            }
+            ChatHeadKind.LINK -> {
+                openLink(entry)
+                return
+            }
+            ChatHeadKind.APP -> Unit
+        }
+        val pkg = entry.packageName ?: return
+        val launched = appRegistry.launch(pkg)
         if (!launched) {
             Toast.makeText(this, "${entry.label}을(를) 열 수 없어요 (삭제되었을 수 있어요)", Toast.LENGTH_SHORT).show()
             return
         }
         collapse()
         lifecycleScope.launch {
-            badgeRepository.clearBadge(entry.packageName)
+            badgeRepository.clearBadge(pkg)
             if (entry.isRoutineApp) {
-                routineRepository.markOpened(entry.routineIds, entry.packageName, todayKey())
+                routineRepository.markOpened(entry.routineIds, pkg, todayKey())
             }
         }
     }
 
+    /** 웹사이트: 기본 브라우저(또는 그 주소를 여는 앱)로 열기 */
+    private fun openLink(entry: ChatHeadEntry) {
+        val url = entry.url ?: return
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            collapse()
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(this, "이 주소를 열 수 있는 앱이 없어요", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     private fun toggleEntryCheck(entry: ChatHeadEntry) {
+        if (entry.kind != ChatHeadKind.APP) return
+        val pkg = entry.packageName ?: return
         if (!entry.isRoutineApp) {
             Toast.makeText(this, "루틴에 포함된 앱만 체크할 수 있어요", Toast.LENGTH_SHORT).show()
             return
         }
         val newValue = entry.isChecked != true
         lifecycleScope.launch {
-            entry.routineIds.forEach { routineRepository.setChecked(it, entry.packageName, todayKey(), newValue) }
+            entry.routineIds.forEach { routineRepository.setChecked(it, pkg, todayKey(), newValue) }
         }
     }
 

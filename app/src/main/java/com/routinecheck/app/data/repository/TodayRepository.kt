@@ -43,10 +43,15 @@ data class TodayRoutine(
 
 data class TodaySnapshot(
     val now: LocalDateTime,
-    val routines: List<TodayRoutine>
+    val routines: List<TodayRoutine>,
+    /** 이 스냅샷이 보여주는 날짜. 기본은 오늘 (홈에서 다른 요일을 고르면 그 날짜) */
+    val day: LocalDate = now.toLocalDate()
 ) {
-    val date: LocalDate get() = now.toLocalDate()
-    val dateKey: String get() = DateKey.of(date)
+    val date: LocalDate get() = day
+    val dateKey: String get() = DateKey.of(day)
+    val isToday: Boolean get() = day == now.toLocalDate()
+    val isPast: Boolean get() = day.isBefore(now.toLocalDate())
+    val isFuture: Boolean get() = day.isAfter(now.toLocalDate())
     val active: List<TodayRoutine> get() = routines.filter { it.isActive }
 }
 
@@ -89,6 +94,38 @@ class TodayRepository @Inject constructor(
                 .sortedBy { it.routine.startTime }
             TodaySnapshot(now, today)
         }
+    }
+
+    /**
+     * 특정 날짜의 루틴 진행 상황 (홈의 요일 선택용).
+     * 지난 날짜는 모든 루틴을 "시작됨"으로, 앞으로의 날짜는 "예정"으로 봅니다.
+     */
+    fun observeDay(day: LocalDate): Flow<TodaySnapshot> = combine(
+        minuteTicker(),
+        routineRepository.observeRoutinesWithApps(),
+        routineRepository.observeChecklistForDate(DateKey.of(day))
+    ) { now, routinesWithApps, states ->
+        val key = DateKey.of(day)
+        val checkedByRoutine = states
+            .filter { it.isChecked && it.date == key }
+            .groupBy({ it.routineId }, { it.packageName })
+        val today = now.toLocalDate()
+        val routines = routinesWithApps
+            .filter { it.routine.isEnabled && RoutineSchedule.isScheduledOn(it.routine.daysOfWeek, day) }
+            .map { rwa ->
+                TodayRoutine(
+                    routine = rwa.routine,
+                    apps = rwa.apps,
+                    checkedPackages = checkedByRoutine[rwa.routine.routineId].orEmpty().toSet(),
+                    hasStarted = when {
+                        day.isBefore(today) -> true
+                        day.isAfter(today) -> false
+                        else -> RoutineSchedule.hasStarted(rwa.routine.startTime, now.toLocalTime())
+                    }
+                )
+            }
+            .sortedBy { it.routine.startTime }
+        TodaySnapshot(now, routines, day)
     }
 
     private fun minuteTicker(): Flow<LocalDateTime> = flow {

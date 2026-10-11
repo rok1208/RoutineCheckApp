@@ -32,6 +32,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routinecheck.app.BuildConfig
+import com.routinecheck.app.data.repository.AlertMode
 import com.routinecheck.app.data.repository.ChatHeadSettingsRepository
 import com.routinecheck.app.data.repository.ChatHeadStyle
 import com.routinecheck.app.data.repository.EdgeSide
@@ -149,13 +150,31 @@ fun SettingsScreen(
                 }
             }
 
-            SectionHeader("챗헤드 앱")
+            SectionHeader("챗헤드 항목")
             OutlinedCard(onClick = onManageChatHeadApps, modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("항상 표시할 앱 관리", modifier = Modifier.weight(1f))
+                    Text("앱 · 웹사이트 · 폴더 관리", modifier = Modifier.weight(1f))
                     Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null)
                 }
             }
+
+            SectionHeader("루틴 알림 방식")
+            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                AlertMode.values().forEachIndexed { index, mode ->
+                    SegmentedButton(
+                        selected = s.alertMode == mode,
+                        onClick = { viewModel.setAlertMode(mode) },
+                        shape = SegmentedButtonDefaults.itemShape(index, AlertMode.values().size)
+                    ) { Text(mode.label) }
+                }
+            }
+            Text(
+                "루틴 시작 시각에 울리는 알림의 방식이에요. 알림을 받을지는 루틴마다 \"시작 알림\"에서 고를 수 있고, " +
+                    "휴대폰이 무음·진동 모드면 휴대폰 설정이 먼저 적용돼요.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 6.dp)
+            )
 
             SectionHeader("권한")
             permissions.forEach { item ->

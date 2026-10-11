@@ -2,7 +2,7 @@ package com.routinecheck.app.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import com.routinecheck.app.data.local.dao.ChatHeadAppDao
+import com.routinecheck.app.data.local.dao.ChatHeadItemDao
 import com.routinecheck.app.data.local.dao.ChatHeadSettingsDao
 import com.routinecheck.app.data.local.dao.ChecklistStateDao
 import com.routinecheck.app.data.local.dao.DailyMemoDao
@@ -10,7 +10,7 @@ import com.routinecheck.app.data.local.dao.NotificationBadgeDao
 import com.routinecheck.app.data.local.dao.RoutineAppDao
 import com.routinecheck.app.data.local.dao.RoutineDao
 import com.routinecheck.app.data.local.entity.AppNotificationBadgeEntity
-import com.routinecheck.app.data.local.entity.ChatHeadAppEntity
+import com.routinecheck.app.data.local.entity.ChatHeadItemEntity
 import com.routinecheck.app.data.local.entity.ChatHeadSettingsEntity
 import com.routinecheck.app.data.local.entity.DailyMemoEntity
 import com.routinecheck.app.data.local.entity.RoutineAppEntity
@@ -26,6 +26,7 @@ import com.routinecheck.app.data.local.entity.RoutineEntity
  *  v2: + chathead_settings
  *  v3: + daily_memos
  *  v4: + chathead_apps, chathead_settings.uiStyle / enabled
+ *  v5: chathead_apps → chathead_items (앱 · 웹사이트 · 폴더 통합, 폴더 안에 넣기 가능)
  *
  * 스키마를 바꿀 때는 entities / version / Migrations.kt / DatabaseModule 를 함께 고쳐주세요.
  */
@@ -37,9 +38,9 @@ import com.routinecheck.app.data.local.entity.RoutineEntity
         AppNotificationBadgeEntity::class,
         ChatHeadSettingsEntity::class,
         DailyMemoEntity::class,
-        ChatHeadAppEntity::class
+        ChatHeadItemEntity::class
     ],
-    version = 4,
+    version = 5,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -49,5 +50,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun notificationBadgeDao(): NotificationBadgeDao
     abstract fun chatHeadSettingsDao(): ChatHeadSettingsDao
     abstract fun dailyMemoDao(): DailyMemoDao
-    abstract fun chatHeadAppDao(): ChatHeadAppDao
+    abstract fun chatHeadItemDao(): ChatHeadItemDao
 }
