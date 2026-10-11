@@ -2,10 +2,12 @@ package com.routinecheck.app.di
 
 import android.content.Context
 import androidx.room.Room
+import com.routinecheck.app.data.local.ALL_MIGRATIONS
 import com.routinecheck.app.data.local.AppDatabase
-import com.routinecheck.app.data.local.MIGRATION_1_2
+import com.routinecheck.app.data.local.dao.ChatHeadAppDao
 import com.routinecheck.app.data.local.dao.ChatHeadSettingsDao
 import com.routinecheck.app.data.local.dao.ChecklistStateDao
+import com.routinecheck.app.data.local.dao.DailyMemoDao
 import com.routinecheck.app.data.local.dao.NotificationBadgeDao
 import com.routinecheck.app.data.local.dao.RoutineAppDao
 import com.routinecheck.app.data.local.dao.RoutineDao
@@ -16,9 +18,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
-/**
- * DB/DAO 제공 모듈. 새 DAO를 추가하면 여기에도 provide 함수를 추가해주세요.
- */
+/** DB/DAO 제공 모듈. 새 DAO를 추가하면 여기에도 provide 함수를 추가해주세요. */
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
@@ -26,13 +26,8 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideAppDatabase(@ApplicationContext context: Context): AppDatabase =
-        Room.databaseBuilder(
-            context,
-            AppDatabase::class.java,
-            "routine_check.db"
-        )
-            // 스키마를 바꿀 때마다 새 Migration을 여기에 추가 (예: MIGRATION_2_3)
-            .addMigrations(MIGRATION_1_2)
+        Room.databaseBuilder(context, AppDatabase::class.java, "routine_check.db")
+            .addMigrations(*ALL_MIGRATIONS)
             .build()
 
     @Provides
@@ -49,4 +44,10 @@ object DatabaseModule {
 
     @Provides
     fun provideChatHeadSettingsDao(db: AppDatabase): ChatHeadSettingsDao = db.chatHeadSettingsDao()
+
+    @Provides
+    fun provideDailyMemoDao(db: AppDatabase): DailyMemoDao = db.dailyMemoDao()
+
+    @Provides
+    fun provideChatHeadAppDao(db: AppDatabase): ChatHeadAppDao = db.chatHeadAppDao()
 }

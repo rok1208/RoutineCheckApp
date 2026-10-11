@@ -3,13 +3,40 @@ package com.routinecheck.app.scheduler
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.routinecheck.app.chathead.ChatHeadController
+import com.routinecheck.app.data.repository.ChatHeadSettingsRepository
+import com.routinecheck.app.data.repository.RoutineRepository
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
 
 /**
- * TODO(석광현): 기기 재부팅 후 저장된 모든 루틴의 알람을 다시 등록
- *   RoutineRepository.getRoutines()를 한 번 읽어서 RoutineAlarmScheduler.schedule() 반복 호출
+ * 재부팅 · 앱 업데이트 · 시간/시간대 변경 · 정확 알람 권한 변경 시
+ * 모든 루틴 알람을 다시 계산해서 등록하고, 챗헤드가 켜져 있었다면 다시 띄웁니다.
  */
+@AndroidEntryPoint
 class BootCompletedReceiver : BroadcastReceiver() {
+
+    @Inject lateinit var routineRepository: RoutineRepository
+    @Inject lateinit var settingsRepository: ChatHeadSettingsRepository
+
     override fun onReceive(context: Context, intent: Intent) {
-        // TODO: 저장된 루틴 전체 재등록
+        val pending = goAsync()
+        CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            try {
+                routineRepository.rescheduleAll()
+                val restartChatHead = intent.action == Intent.ACTION_BOOT_COMPLETED ||
+                    intent.action == Intent.ACTION_MY_PACKAGE_REPLACED
+                if (restartChatHead && settingsRepository.getSettings().enabled) {
+                    withContext(Dispatchers.Main) { ChatHeadController.show(context) }
+                }
+            } finally {
+                pending.finish()
+            }
+        }
     }
 }

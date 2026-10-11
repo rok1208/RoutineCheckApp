@@ -1,51 +1,51 @@
 package com.routinecheck.app.onboarding
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routinecheck.app.MainActivity
+import com.routinecheck.app.ui.theme.RoutineCheckTheme
 import com.routinecheck.app.util.PermissionUtils
 import dagger.hilt.android.AndroidEntryPoint
 
 /**
- * 앱의 첫 진입 화면 (LAUNCHER). 필수 권한을 모두 받으면 MainActivity로 이동합니다.
+ * 앱의 첫 진입 화면 (LAUNCHER).
+ * 필수 권한이 이미 모두 있으면 바로 MainActivity로 넘어가고, 없으면 권한 안내를 보여줍니다.
  *
- * 권한별로 요청 방식이 다른 이유:
- *  - 오버레이 / 배터리 최적화 → 설정 앱의 특정 화면으로 이동해야 함 (startActivity)
- *  - 알림(POST_NOTIFICATIONS) → 일반 런타임 권한이라 시스템 다이얼로그로 요청 가능
- *
- * 설정 화면에서 돌아오면 onResume에서 다시 상태를 읽어야 하므로 refresh()를 호출합니다.
- * 담당: 변공록
+ *  - 오버레이 / 정확한 알람 / 알림 접근 / 배터리 최적화 → 설정 앱의 해당 화면으로 이동
+ *  - 알림(POST_NOTIFICATIONS) → 시스템 권한 다이얼로그 (Android 13+)
  */
 @AndroidEntryPoint
 class OnboardingActivity : ComponentActivity() {
 
     private val viewModel: OnboardingViewModel by viewModels()
 
-    // 알림 권한(POST_NOTIFICATIONS)은 런타임 권한 다이얼로그로 요청
     private val notificationPermissionLauncher =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-            viewModel.refresh()
-        }
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { viewModel.refresh() }
 
-    // 오버레이 / 배터리 최적화는 설정 화면으로 이동 후 돌아왔을 때 refresh
     private val settingsLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            viewModel.refresh()
-        }
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { viewModel.refresh() }
+
+    /** 홈 화면의 "해결하기"로 들어온 경우: 끝나면 홈으로 돌아가기만 하면 됨 */
+    private val fromApp: Boolean get() = intent.getBooleanExtra(EXTRA_FROM_APP, false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        if (!fromApp && savedInstanceState == null && PermissionUtils.requiredPermissionsGranted(this)) {
+            goToMain()
+            return
+        }
+        enableEdgeToEdge()
         setContent {
-            val uiState by viewModel.uiState.collectAsState()
-
-            MaterialTheme {
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            RoutineCheckTheme {
                 OnboardingScreen(
                     uiState = uiState,
                     onRequestPermission = ::requestPermission,
@@ -61,20 +61,30 @@ class OnboardingActivity : ComponentActivity() {
     }
 
     private fun requestPermission(type: PermissionType) {
-        when (type) {
-            PermissionType.OVERLAY ->
-                settingsLauncher.launch(PermissionUtils.overlayPermissionIntent(this))
-
-            PermissionType.NOTIFICATION ->
-                notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-
-            PermissionType.BATTERY_OPTIMIZATION ->
-                settingsLauncher.launch(PermissionUtils.batteryOptimizationIntent(this))
+        runCatching {
+            when (type) {
+                PermissionType.OVERLAY -> settingsLauncher.launch(PermissionUtils.overlayPermissionIntent(this))
+                PermissionType.NOTIFICATION ->
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        notificationPermissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                PermissionType.EXACT_ALARM -> settingsLauncher.launch(PermissionUtils.exactAlarmIntent(this))
+                PermissionType.NOTIFICATION_LISTENER -> settingsLauncher.launch(PermissionUtils.notificationListenerIntent(this))
+                PermissionType.BATTERY_OPTIMIZATION -> settingsLauncher.launch(PermissionUtils.batteryOptimizationIntent(this))
+            }
+            Unit
+        }.onFailure {
+            // 일부 제조사 기기에서 특정 설정 화면이 없을 때: 앱 정보 화면으로 대신 이동
+            settingsLauncher.launch(PermissionUtils.appDetailsIntent(this))
         }
     }
 
     private fun goToMain() {
-        startActivity(Intent(this, MainActivity::class.java))
+        if (!fromApp) startActivity(Intent(this, MainActivity::class.java))
         finish()
+    }
+
+    companion object {
+        const val EXTRA_FROM_APP = "from_app"
     }
 }

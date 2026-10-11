@@ -13,16 +13,17 @@ import javax.inject.Inject
 data class OnboardingUiState(
     val steps: List<PermissionStepUiState> = emptyList()
 ) {
+    /** 필수 권한이 모두 허용되면 시작 가능 */
+    val requiredGranted: Boolean get() = steps.isNotEmpty() && steps.filter { it.isRequired }.all { it.isGranted }
     val allGranted: Boolean get() = steps.isNotEmpty() && steps.all { it.isGranted }
 
-    /** 아직 허용 안 된 항목 중 화면에 보이는 순서로 첫 번째. null이면 전부 허용됨. */
-    val nextUngranted: PermissionStepUiState? get() = steps.firstOrNull { !it.isGranted }
+    /** 아직 허용 안 된 필수 항목 중 첫 번째 */
+    val nextRequired: PermissionStepUiState? get() = steps.firstOrNull { it.isRequired && !it.isGranted }
 }
 
 /**
- * 온보딩(① 온보딩) 화면의 상태를 관리합니다.
- * Activity가 화면(설정 앱 등)에서 돌아올 때마다 refresh()를 호출해 상태를 다시 읽습니다.
- * 담당: 변공록
+ * 온보딩 화면 상태. 설정 화면 등에서 돌아올 때마다 refresh()로 다시 읽습니다.
+ * 필수: 오버레이 · 알림 · 정확한 알람 / 권장: 알림 접근(배지) · 배터리 최적화 제외
  */
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
@@ -32,30 +33,37 @@ class OnboardingViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(OnboardingUiState())
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
 
-    init {
-        refresh()
-    }
+    init { refresh() }
 
     fun refresh() {
         _uiState.value = OnboardingUiState(
             steps = listOf(
                 PermissionStepUiState(
-                    type = PermissionType.OVERLAY,
-                    title = "다른 앱 위에 표시",
-                    description = "챗헤드를 화면 위에 띄우기 위해 필요해요",
-                    isGranted = PermissionUtils.hasOverlayPermission(context)
+                    PermissionType.OVERLAY, "다른 앱 위에 표시",
+                    "챗헤드를 어느 화면에서든 띄우기 위해 필요해요",
+                    PermissionUtils.hasOverlayPermission(context)
                 ),
                 PermissionStepUiState(
-                    type = PermissionType.NOTIFICATION,
-                    title = "알림",
-                    description = "루틴 시간 알림을 보내기 위해 필요해요",
-                    isGranted = PermissionUtils.hasNotificationPermission(context)
+                    PermissionType.NOTIFICATION, "알림",
+                    "루틴 시간이 되면 알려드려요",
+                    PermissionUtils.hasNotificationPermission(context)
                 ),
                 PermissionStepUiState(
-                    type = PermissionType.BATTERY_OPTIMIZATION,
-                    title = "배터리 사용량 최적화 제외",
-                    description = "백그라운드에서 챗헤드/알림이 꺼지지 않도록 해줘요",
-                    isGranted = PermissionUtils.isIgnoringBatteryOptimizations(context)
+                    PermissionType.EXACT_ALARM, "정확한 알람",
+                    "루틴 시각에 늦지 않게 정각에 알려드려요",
+                    PermissionUtils.canScheduleExactAlarms(context)
+                ),
+                PermissionStepUiState(
+                    PermissionType.NOTIFICATION_LISTENER, "알림 접근",
+                    "메신저 등의 미확인 알림 수를 챗헤드에 배지로 보여줘요",
+                    PermissionUtils.hasNotificationListenerAccess(context),
+                    isRequired = false
+                ),
+                PermissionStepUiState(
+                    PermissionType.BATTERY_OPTIMIZATION, "배터리 사용량 최적화 제외",
+                    "백그라운드에서 챗헤드와 알람이 꺼지지 않게 해줘요",
+                    PermissionUtils.isIgnoringBatteryOptimizations(context),
+                    isRequired = false
                 )
             )
         )

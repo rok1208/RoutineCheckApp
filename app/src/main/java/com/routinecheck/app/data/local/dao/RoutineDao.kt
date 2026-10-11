@@ -10,6 +10,9 @@ interface RoutineDao {
     @Query("SELECT * FROM routines ORDER BY startTime ASC")
     fun getAllRoutines(): Flow<List<RoutineEntity>>
 
+    @Query("SELECT * FROM routines ORDER BY startTime ASC")
+    suspend fun getAllOnce(): List<RoutineEntity>
+
     @Query("SELECT * FROM routines WHERE routineId = :routineId")
     suspend fun getRoutineById(routineId: Long): RoutineEntity?
 
