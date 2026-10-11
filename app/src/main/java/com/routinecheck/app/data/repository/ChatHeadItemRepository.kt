@@ -1,13 +1,13 @@
 package com.routinecheck.app.data.repository
 
-import com.routinecheck.app.data.local.dao.ChatHeadItemDao
-import com.routinecheck.app.data.local.entity.ChatHeadItemEntity
+import com.routinecheck.app.data.local.ChatHeadItemDao
+import com.routinecheck.app.data.local.ChatHeadItemEntity
 import com.routinecheck.app.domain.ChatHeadKind
 import com.routinecheck.app.domain.ChatHeadOrdering
 import com.routinecheck.app.domain.PinnedItem
-import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
 
 fun ChatHeadItemEntity.toPinned() = PinnedItem(
     id = itemId,

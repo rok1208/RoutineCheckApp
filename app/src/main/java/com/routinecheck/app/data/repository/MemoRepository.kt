@@ -1,13 +1,13 @@
 package com.routinecheck.app.data.repository
 
-import com.routinecheck.app.data.local.dao.DailyMemoDao
-import com.routinecheck.app.data.local.entity.DailyMemoEntity
-import com.routinecheck.app.util.DateKey
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import com.routinecheck.app.data.local.DailyMemoDao
+import com.routinecheck.app.data.local.DailyMemoEntity
+import com.routinecheck.app.domain.DateKey
 import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 @Singleton
 class MemoRepository @Inject constructor(
@@ -18,6 +18,13 @@ class MemoRepository @Inject constructor(
         dao.observeMemoDates(DateKey.of(from), DateKey.of(to)).map { keys -> keys.map(DateKey::parse).toSet() }
 
     suspend fun getMemo(date: LocalDate): String = dao.get(DateKey.of(date))?.content.orEmpty()
+
+    fun observeMemo(date: LocalDate): Flow<String> = dao.observe(DateKey.of(date)).map { it?.content.orEmpty() }
+
+    /** 작성한 모든 메모 (최근 날짜부터) */
+    fun observeAll(): Flow<List<DailyMemoEntity>> = dao.observeAll()
+
+    suspend fun deleteMemo(date: LocalDate) = dao.delete(DateKey.of(date))
 
     /** 내용이 비어 있으면 메모를 삭제합니다 */
     suspend fun saveMemo(date: LocalDate, content: String) {

@@ -1,10 +1,15 @@
 package com.routinecheck.app.data.repository
 
-import com.routinecheck.app.data.local.entity.RoutineAppEntity
-import com.routinecheck.app.data.local.entity.RoutineEntity
+import com.routinecheck.app.data.local.RoutineAppEntity
+import com.routinecheck.app.data.local.RoutineEntity
 import com.routinecheck.app.domain.ActiveRoutineInput
+import com.routinecheck.app.domain.DateKey
 import com.routinecheck.app.domain.RoutineSchedule
-import com.routinecheck.app.util.DateKey
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.temporal.ChronoUnit
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -13,11 +18,6 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /** 오늘 예정된 루틴 하나의 진행 상태 */
 data class TodayRoutine(

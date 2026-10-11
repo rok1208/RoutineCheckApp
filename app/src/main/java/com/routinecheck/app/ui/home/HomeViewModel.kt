@@ -1,8 +1,8 @@
 package com.routinecheck.app.ui.home
 
-import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.content.Context
 import com.routinecheck.app.chathead.ChatHeadController
 import com.routinecheck.app.data.repository.Badge
 import com.routinecheck.app.data.repository.ChatHeadItemRepository
@@ -16,11 +16,13 @@ import com.routinecheck.app.data.repository.TodaySnapshot
 import com.routinecheck.app.data.repository.toPinned
 import com.routinecheck.app.domain.ChatHeadEntry
 import com.routinecheck.app.domain.ChatHeadOrdering
+import com.routinecheck.app.domain.DateKey
 import com.routinecheck.app.domain.RoutineSchedule
-import com.routinecheck.app.util.DateKey
-import com.routinecheck.app.util.PermissionUtils
+import com.routinecheck.app.system.PermissionUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.time.LocalDate
+import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
@@ -30,6 +32,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -37,8 +40,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import java.time.LocalDate
-import javax.inject.Inject
 
 /** 주간 달력 한 칸 */
 data class WeekDayCell(
@@ -78,6 +79,8 @@ data class HomeUiState(
     val pinnedEntries: List<ChatHeadEntry> = emptyList(),
     val badges: Map<String, Badge> = emptyMap(),
     val week: List<WeekDayCell> = emptyList(),
+    /** 보고 있는 주: 0 = 이번 주, 1 = 다음 주, -1 = 지난주 … */
+    val weekOffset: Long = 0,
     val permissions: PermissionWarnings = PermissionWarnings()
 )
 
@@ -93,7 +96,6 @@ class HomeViewModel @Inject constructor(
     private val memoRepository: MemoRepository
 ) : ViewModel() {
 
-    private val weekStart = DateKey.weekStart(LocalDate.now())
     private val permissions = MutableStateFlow(readPermissions())
     private val selectedDate = MutableStateFlow(LocalDate.now())
 
@@ -101,20 +103,23 @@ class HomeViewModel @Inject constructor(
     val memo: StateFlow<MemoPanelState> = _memo.asStateFlow()
     private var saveJob: Job? = null
 
-    private val week = combine(
-        memoRepository.observeMemoDates(weekStart, weekStart.plusDays(6)),
-        routineRepository.getRoutines(),
-        selectedDate
-    ) { memoDates, routines, selected ->
-        (0L..6L).map { offset ->
-            val date = weekStart.plusDays(offset)
-            WeekDayCell(
-                date = date,
-                isToday = date == LocalDate.now(),
-                isSelected = date == selected,
-                hasMemo = date in memoDates,
-                routineCount = routines.count { it.isEnabled && RoutineSchedule.isScheduledOn(it.daysOfWeek, date) }
-            )
+    /** 주간 달력 = 고른 날짜가 속한 주 (‹ › 버튼은 고른 날짜를 7일씩 옮김) */
+    private val week = selectedDate.flatMapLatest { selected ->
+        val start = DateKey.weekStart(selected)
+        combine(
+            memoRepository.observeMemoDates(start, start.plusDays(6)),
+            routineRepository.getRoutines()
+        ) { memoDates, routines ->
+            (0L..6L).map { offset ->
+                val date = start.plusDays(offset)
+                WeekDayCell(
+                    date = date,
+                    isToday = date == LocalDate.now(),
+                    isSelected = date == selected,
+                    hasMemo = date in memoDates,
+                    routineCount = routines.count { it.isEnabled && RoutineSchedule.isScheduledOn(it.daysOfWeek, date) }
+                )
+            }
         }
     }
 
@@ -128,10 +133,27 @@ class HomeViewModel @Inject constructor(
         combine(badgeRepository.observeBadges(), week) { b, w -> b to w },
         permissions
     ) { (today, day), settings, entries, (badges, weekCells), perms ->
-        HomeUiState(today, day, settings, entries, badges, weekCells, perms)
+        val offset = weekCells.firstOrNull()?.let {
+            java.time.temporal.ChronoUnit.WEEKS.between(DateKey.weekStart(LocalDate.now()), it.date)
+        } ?: 0L
+        HomeUiState(today, day, settings, entries, badges, weekCells, offset, perms)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState())
 
     // ---------------------------------------------------------------- 요일 선택 + 메모
+
+    init {
+        // 메모지에 보이는 날짜의 메모를 계속 지켜봄: 전체 메모 화면에서 고친 내용도 바로 반영
+        // (입력 중이라 아직 저장 안 된 글이 있으면 덮어쓰지 않음)
+        viewModelScope.launch {
+            _memo.map { it.date }.distinctUntilChanged()
+                .flatMapLatest { date -> memoRepository.observeMemo(date).map { date to it } }
+                .collect { (date, text) ->
+                    _memo.update { m ->
+                        if (m.date == date && m.loaded && m.saved && m.text != text) m.copy(text = text) else m
+                    }
+                }
+        }
+    }
 
     /** 요일을 누르면: 그 날짜의 루틴을 보여주고 메모지를 엶. 열린 날짜를 다시 누르면 메모지만 닫힘 */
     fun selectDate(date: LocalDate) {
@@ -140,11 +162,27 @@ class HomeViewModel @Inject constructor(
             closeMemo()
             return
         }
+        openDate(date, openMemo = true)
+    }
+
+    /** ‹ › : 같은 요일로 한 주 앞/뒤. 메모지가 열려 있으면 그 날짜의 메모로 바뀜 */
+    fun shiftWeek(delta: Long) {
+        openDate(selectedDate.value.plusWeeks(delta), openMemo = _memo.value.open)
+    }
+
+    /** 메모지를 닫은 자리의 "메모 작성" 버튼: 고른 날짜의 메모지를 다시 엶 */
+    fun openMemo() = openDate(selectedDate.value, openMemo = true)
+
+    /** 전체 메모 화면에서 "홈에서 보기"를 눌렀을 때 */
+    fun showMemo(date: LocalDate) = openDate(date, openMemo = true)
+
+    private fun openDate(date: LocalDate, openMemo: Boolean) {
         selectedDate.value = date
+        saveJob?.cancel()
         viewModelScope.launch {
             saveMemoNow()
             val text = memoRepository.getMemo(date)
-            _memo.value = MemoPanelState(date = date, open = true, text = text, loaded = true)
+            _memo.value = MemoPanelState(date = date, open = openMemo, text = text, loaded = true)
         }
     }
 
@@ -153,12 +191,8 @@ class HomeViewModel @Inject constructor(
         _memo.update { it.copy(open = false) }
     }
 
-    /** 다시 오늘 루틴 보기 */
-    fun backToToday() {
-        flushMemo()
-        selectedDate.value = LocalDate.now()
-        _memo.update { if (it.date == LocalDate.now()) it else it.copy(open = false) }
-    }
+    /** 다시 오늘(이번 주) 보기. 메모지가 열려 있으면 오늘 메모로 */
+    fun backToToday() = openDate(LocalDate.now(), openMemo = _memo.value.open)
 
     /** 입력할 때마다 0.6초 뒤 자동 저장 */
     fun onMemoChange(text: String) {

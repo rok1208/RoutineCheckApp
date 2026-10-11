@@ -2,13 +2,13 @@ package com.routinecheck.app
 
 import android.app.Application
 import com.routinecheck.app.data.repository.RoutineRepository
-import com.routinecheck.app.notification.NotificationChannels
+import com.routinecheck.app.system.NotificationChannels
 import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 /**
  * Application 진입점. Hilt DI 그래프가 여기서부터 생성됩니다.

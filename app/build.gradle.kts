@@ -13,8 +13,8 @@ android {
         applicationId = "com.routinecheck.app"
         minSdk = 26          // Android 8.0+ (오버레이 TYPE_APPLICATION_OVERLAY, 알림 채널 기준)
         targetSdk = 35
-        versionCode = 3
-        versionName = "0.3.0"
+        versionCode = 4
+        versionName = "0.4.0"
     }
 
     buildTypes {

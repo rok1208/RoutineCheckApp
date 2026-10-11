@@ -1,11 +1,11 @@
 package com.routinecheck.app.data.repository
 
-import com.routinecheck.app.data.local.dao.NotificationBadgeDao
-import com.routinecheck.app.data.local.entity.AppNotificationBadgeEntity
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import com.routinecheck.app.data.local.AppNotificationBadgeEntity
+import com.routinecheck.app.data.local.NotificationBadgeDao
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 /** 배지 표시용: urgent(전화·알람 등 중요한 알림)면 숫자 대신 "!" */
 data class Badge(val count: Int, val urgent: Boolean) {

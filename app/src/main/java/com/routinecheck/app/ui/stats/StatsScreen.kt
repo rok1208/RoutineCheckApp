@@ -29,15 +29,15 @@ import androidx.lifecycle.viewModelScope
 import com.routinecheck.app.data.repository.DayStat
 import com.routinecheck.app.data.repository.StatsRepository
 import com.routinecheck.app.data.repository.StatsSummary
+import com.routinecheck.app.domain.DayMask
 import com.routinecheck.app.ui.common.SectionHeader
-import com.routinecheck.app.util.DayMask
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.stateIn
 import java.time.LocalDate
 import javax.inject.Inject
 import kotlin.math.roundToInt
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 
 @HiltViewModel
 class StatsViewModel @Inject constructor(statsRepository: StatsRepository) : ViewModel() {

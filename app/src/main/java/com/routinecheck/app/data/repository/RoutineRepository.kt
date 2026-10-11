@@ -2,17 +2,17 @@ package com.routinecheck.app.data.repository
 
 import androidx.room.withTransaction
 import com.routinecheck.app.data.local.AppDatabase
-import com.routinecheck.app.data.local.dao.ChecklistStateDao
-import com.routinecheck.app.data.local.dao.RoutineAppDao
-import com.routinecheck.app.data.local.dao.RoutineDao
-import com.routinecheck.app.data.local.entity.RoutineAppEntity
-import com.routinecheck.app.data.local.entity.RoutineChecklistStateEntity
-import com.routinecheck.app.data.local.entity.RoutineEntity
-import com.routinecheck.app.scheduler.RoutineAlarmScheduler
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
+import com.routinecheck.app.data.local.ChecklistStateDao
+import com.routinecheck.app.data.local.RoutineAppDao
+import com.routinecheck.app.data.local.RoutineAppEntity
+import com.routinecheck.app.data.local.RoutineChecklistStateEntity
+import com.routinecheck.app.data.local.RoutineDao
+import com.routinecheck.app.data.local.RoutineEntity
+import com.routinecheck.app.system.RoutineAlarmScheduler
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 
 /** 루틴 + 등록 앱 묶음 */
 data class RoutineWithApps(

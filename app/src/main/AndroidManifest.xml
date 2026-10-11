@@ -40,7 +40,7 @@
         android:theme="@style/Theme.RoutineCheck">
 
         <activity
-            android:name=".onboarding.OnboardingActivity"
+            android:name=".ui.onboarding.OnboardingActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -66,7 +66,7 @@
 
         <!-- 알림 배지: 상태바 알림 읽기 (설정 > 알림 접근에서 사용자가 허용) -->
         <service
-            android:name=".notification.AppNotificationListenerService"
+            android:name=".system.AppNotificationListenerService"
             android:exported="true"
             android:label="@string/notification_listener_label"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
@@ -77,7 +77,7 @@
 
         <!-- 재부팅 · 업데이트 · 시간 변경 시 알람 재등록 -->
         <receiver
-            android:name=".scheduler.BootCompletedReceiver"
+            android:name=".system.BootCompletedReceiver"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
@@ -89,7 +89,7 @@
         </receiver>
 
         <receiver
-            android:name=".scheduler.RoutineAlarmReceiver"
+            android:name=".system.RoutineAlarmReceiver"
             android:exported="false" />
 
     </application>

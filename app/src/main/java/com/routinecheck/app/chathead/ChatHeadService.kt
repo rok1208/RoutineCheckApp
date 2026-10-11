@@ -1,26 +1,5 @@
 package com.routinecheck.app.chathead
 
-import android.animation.ValueAnimator
-import android.annotation.SuppressLint
-import android.app.Notification
-import android.app.PendingIntent
-import android.content.Context
-import android.content.ActivityNotFoundException
-import android.content.Intent
-import android.net.Uri
-import android.content.pm.ServiceInfo
-import android.content.res.Configuration
-import android.graphics.PixelFormat
-import android.os.Build
-import android.provider.Settings
-import android.util.DisplayMetrics
-import android.view.Gravity
-import android.view.MotionEvent
-import android.view.View
-import android.view.ViewConfiguration
-import android.view.WindowManager
-import android.view.animation.DecelerateInterpolator
-import android.widget.Toast
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -38,6 +17,27 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import android.animation.ValueAnimator
+import android.annotation.SuppressLint
+import android.app.Notification
+import android.app.PendingIntent
+import android.content.ActivityNotFoundException
+import android.content.Context
+import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.content.res.Configuration
+import android.graphics.PixelFormat
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import android.util.DisplayMetrics
+import android.view.Gravity
+import android.view.MotionEvent
+import android.view.View
+import android.view.ViewConfiguration
+import android.view.WindowManager
+import android.view.animation.DecelerateInterpolator
+import android.widget.Toast
 import com.routinecheck.app.MainActivity
 import com.routinecheck.app.R
 import com.routinecheck.app.data.repository.AppRegistryRepository
@@ -54,12 +54,15 @@ import com.routinecheck.app.data.repository.toPinned
 import com.routinecheck.app.domain.ChatHeadEntry
 import com.routinecheck.app.domain.ChatHeadKind
 import com.routinecheck.app.domain.ChatHeadOrdering
-import com.routinecheck.app.notification.NotificationChannels
-import com.routinecheck.app.ui.navigation.Routes
-import com.routinecheck.app.ui.theme.RoutineCheckTheme
-import com.routinecheck.app.util.ChatHeadIconStore
-import com.routinecheck.app.util.DateKey
+import com.routinecheck.app.domain.DateKey
+import com.routinecheck.app.system.NotificationChannels
+import com.routinecheck.app.ui.Routes
+import com.routinecheck.app.ui.RoutineCheckTheme
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlin.math.abs
+import kotlin.math.hypot
+import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
@@ -68,10 +71,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
-import kotlin.math.abs
-import kotlin.math.hypot
-import kotlin.math.roundToInt
 
 /**
  * 챗헤드 오버레이 Foreground Service — 앱의 핵심 기능.
@@ -348,7 +347,7 @@ class ChatHeadService : LifecycleService(), SavedStateRegistryOwner {
                     onBack = { folderIds.update { it.dropLast(1) } },
                     onTop = { folderIds.value = emptyList() },
                     onOpenApp = { openMainApp(null) },
-                    onManageApps = { openMainApp(Routes.CHATHEAD_APPS) },
+                    onManageApps = { openMainApp(Routes.CHATHEAD_ITEMS) },
                     onOpenSettings = { openMainApp(Routes.SETTINGS) }
                 )
             )

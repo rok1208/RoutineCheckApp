@@ -3,21 +3,21 @@ package com.routinecheck.app
 import com.routinecheck.app.domain.ActiveRoutineInput
 import com.routinecheck.app.domain.ChatHeadKind
 import com.routinecheck.app.domain.ChatHeadOrdering
+import com.routinecheck.app.domain.DateKey
+import com.routinecheck.app.domain.DayMask
 import com.routinecheck.app.domain.LinkUtils
 import com.routinecheck.app.domain.PinnedItem
 import com.routinecheck.app.domain.RoutineSchedule
-import com.routinecheck.app.util.DateKey
-import com.routinecheck.app.util.DayMask
-import com.routinecheck.app.util.TimeText
+import com.routinecheck.app.domain.TimeText
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
 
 /** 기기 없이 돌아가는 순수 로직 테스트 (Android Studio: 우클릭 → Run 'RoutineLogicTest') */
 class RoutineLogicTest {

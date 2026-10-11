@@ -37,16 +37,16 @@ import com.routinecheck.app.data.repository.ChatHeadSettingsRepository
 import com.routinecheck.app.data.repository.ChatHeadStyle
 import com.routinecheck.app.data.repository.EdgeSide
 import com.routinecheck.app.data.repository.OnCompleteBehavior
+import com.routinecheck.app.ui.Brand
 import com.routinecheck.app.ui.common.ChatHeadPreview
 import com.routinecheck.app.ui.common.SectionHeader
-import com.routinecheck.app.ui.theme.Brand
 
 /** ⑦ 챗헤드 설정 + 권한 상태 */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     onBack: () -> Unit,
-    onManageChatHeadApps: () -> Unit,
+    onManageChatHeadItems: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle()
@@ -151,7 +151,7 @@ fun SettingsScreen(
             }
 
             SectionHeader("챗헤드 항목")
-            OutlinedCard(onClick = onManageChatHeadApps, modifier = Modifier.fillMaxWidth()) {
+            OutlinedCard(onClick = onManageChatHeadItems, modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("앱 · 웹사이트 · 폴더 관리", modifier = Modifier.weight(1f))
                     Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null)

@@ -1,22 +1,22 @@
 package com.routinecheck.app
 
-import android.content.Intent
-import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.lifecycleScope
+import android.content.Intent
+import android.os.Bundle
 import com.routinecheck.app.chathead.ChatHeadController
 import com.routinecheck.app.data.repository.ChatHeadSettingsRepository
-import com.routinecheck.app.ui.navigation.AppRoot
-import com.routinecheck.app.ui.theme.RoutineCheckTheme
+import com.routinecheck.app.ui.AppRoot
+import com.routinecheck.app.ui.RoutineCheckTheme
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlinx.coroutines.launch
 
 /**
- * 앱 화면 진입점. 하단 탭(홈 · 루틴 · 통계)과 모든 화면 이동은 ui/navigation/AppNavHost.kt 에서 처리합니다.
+ * 앱 화면 진입점. 하단 탭(홈 · 루틴 · 통계)과 모든 화면 이동은 ui/AppNavHost.kt 에서 처리합니다.
  * 챗헤드의 "앱 관리"/"설정" 버튼은 EXTRA_START_ROUTE 로 원하는 화면을 바로 엽니다.
  */
 @AndroidEntryPoint

@@ -1,7 +1,5 @@
 package com.routinecheck.app.domain
 
-import com.routinecheck.app.util.DayMask
-import com.routinecheck.app.util.TimeText
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime

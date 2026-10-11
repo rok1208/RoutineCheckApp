@@ -1,7 +1,5 @@
 package com.routinecheck.app.ui.common
 
-import android.content.Context
-import android.util.LruCache
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -22,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -29,10 +28,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
+import android.content.Context
+import android.util.LruCache
 import com.routinecheck.app.data.repository.Badge
 import com.routinecheck.app.domain.ChatHeadKind
-import androidx.compose.ui.graphics.vector.ImageVector
-import com.routinecheck.app.ui.theme.Brand
+import com.routinecheck.app.ui.Brand
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

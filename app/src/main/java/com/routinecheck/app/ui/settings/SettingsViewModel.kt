@@ -1,22 +1,23 @@
 package com.routinecheck.app.ui.settings
 
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.routinecheck.app.chathead.ChatHeadController
+import com.routinecheck.app.chathead.ChatHeadIconStore
 import com.routinecheck.app.data.repository.AlertMode
 import com.routinecheck.app.data.repository.ChatHeadSettings
 import com.routinecheck.app.data.repository.ChatHeadSettingsRepository
 import com.routinecheck.app.data.repository.ChatHeadStyle
 import com.routinecheck.app.data.repository.EdgeSide
 import com.routinecheck.app.data.repository.OnCompleteBehavior
-import com.routinecheck.app.util.ChatHeadIconStore
-import com.routinecheck.app.util.PermissionUtils
+import com.routinecheck.app.system.PermissionUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,7 +26,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import javax.inject.Inject
 
 data class PermissionItem(
     val title: String,

@@ -35,13 +35,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Apps
-import androidx.compose.material.icons.rounded.Folder
-import androidx.compose.material.icons.rounded.VerticalAlignTop
 import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.Folder
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Tune
+import androidx.compose.material.icons.rounded.VerticalAlignTop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -63,10 +63,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
@@ -81,12 +81,12 @@ import com.routinecheck.app.data.repository.EdgeSide
 import com.routinecheck.app.domain.ChatHeadEntry
 import com.routinecheck.app.domain.ChatHeadKind
 import com.routinecheck.app.domain.LinkUtils
-import com.routinecheck.app.ui.common.ChatHeadItemIcon
+import com.routinecheck.app.ui.Brand
 import com.routinecheck.app.ui.common.BadgeDot
-import com.routinecheck.app.ui.theme.Brand
-import kotlinx.coroutines.launch
+import com.routinecheck.app.ui.common.ChatHeadItemIcon
 import kotlin.math.abs
 import kotlin.math.min
+import kotlinx.coroutines.launch
 
 /** 챗헤드 오버레이 크기 상수 (서비스의 WindowManager 계산과 반드시 일치해야 함) */
 object HeadDimens {

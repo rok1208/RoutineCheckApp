@@ -1,7 +1,8 @@
 package com.routinecheck.app.ui.home
 
-import android.content.Intent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -10,9 +11,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.EditNote
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.WarningAmber
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,19 +38,20 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import android.content.Intent
 import com.routinecheck.app.data.repository.TodayRoutine
-import com.routinecheck.app.onboarding.OnboardingActivity
 import com.routinecheck.app.domain.ChatHeadKind
+import com.routinecheck.app.domain.DateKey
+import com.routinecheck.app.domain.DayMask
+import com.routinecheck.app.domain.TimeText
+import com.routinecheck.app.ui.Brand
 import com.routinecheck.app.ui.common.AppIcon
-import com.routinecheck.app.ui.common.ChatHeadItemIcon
 import com.routinecheck.app.ui.common.BadgeDot
+import com.routinecheck.app.ui.common.ChatHeadItemIcon
 import com.routinecheck.app.ui.common.ChatHeadPreview
 import com.routinecheck.app.ui.common.SectionHeader
 import com.routinecheck.app.ui.common.StatusChip
-import com.routinecheck.app.ui.theme.Brand
-import com.routinecheck.app.util.DateKey
-import com.routinecheck.app.util.DayMask
-import com.routinecheck.app.util.TimeText
+import com.routinecheck.app.ui.onboarding.OnboardingActivity
 import java.time.LocalDate
 
 /**
@@ -59,14 +62,24 @@ import java.time.LocalDate
 fun HomeScreen(
     onOpenRoutine: (Long) -> Unit,
     onNewRoutine: () -> Unit,
-    onManageChatHeadApps: () -> Unit,
+    onManageChatHeadItems: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenAllMemos: () -> Unit,
+    /** 전체 메모 화면에서 "홈에서 보기"로 돌아왔을 때 열 날짜 */
+    requestedMemoDate: LocalDate? = null,
+    onRequestedMemoHandled: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val memo by viewModel.memo.collectAsStateWithLifecycle()
     val context = LocalContext.current
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshPermissions() }
+    LaunchedEffect(requestedMemoDate) {
+        if (requestedMemoDate != null) {
+            viewModel.showMemo(requestedMemoDate)
+            onRequestedMemoHandled()
+        }
+    }
     LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { viewModel.flushMemo() }
 
     LazyColumn(
@@ -95,13 +108,19 @@ fun HomeScreen(
             ChatHeadCard(
                 state = state,
                 onToggle = viewModel::setChatHeadEnabled,
-                onManageApps = onManageChatHeadApps,
+                onManageApps = onManageChatHeadItems,
                 onOpenSettings = onOpenSettings
             )
         }
 
         item {
-            SectionHeader("이번 주")
+            WeekHeader(
+                cells = state.week,
+                offset = state.weekOffset,
+                onPrev = { viewModel.shiftWeek(-1) },
+                onNext = { viewModel.shiftWeek(1) },
+                onThisWeek = viewModel::backToToday
+            )
             WeekStrip(cells = state.week, onClick = viewModel::selectDate)
         }
 
@@ -113,6 +132,31 @@ fun HomeScreen(
                     onChange = viewModel::onMemoChange,
                     onClose = viewModel::closeMemo
                 )
+            }
+        } else {
+            // 메모지를 닫으면 그 자리에 "메모 작성" 버튼 (메모가 있는 날이면 "메모 보기")
+            val selected = state.week.firstOrNull { it.isSelected }
+            item(key = "memo-open") {
+                MemoOpenButton(
+                    date = selected?.date ?: memo.date,
+                    hasMemo = selected?.hasMemo == true,
+                    onClick = viewModel::openMemo
+                )
+            }
+        }
+        // 메모 아래 작은 버튼: 지금까지 쓴 모든 메모 보기·관리
+        item(key = "all-memos") {
+            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                TextButton(
+                    onClick = { viewModel.flushMemo(); onOpenAllMemos() },
+                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp),
+                    modifier = Modifier.height(32.dp)
+                ) {
+                    Icon(Icons.Rounded.EditNote, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(Modifier.width(4.dp))
+                    Text("전체 메모 보기", style = MaterialTheme.typography.labelMedium)
+                    Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(16.dp))
+                }
             }
         }
 
@@ -165,6 +209,31 @@ private fun dayTitle(day: com.routinecheck.app.data.repository.TodaySnapshot?): 
     if (day == null || day.isToday) return "오늘의 루틴"
     val d = day.date
     return "${d.monthValue}월 ${d.dayOfMonth}일 (${DayMask.shortName(d.dayOfWeek)}) 루틴"
+}
+
+/** 닫힌 메모지 자리: 얇은 카드 버튼 */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MemoOpenButton(date: LocalDate, hasMemo: Boolean, onClick: () -> Unit) {
+    val ink = Color(0xFF3B3320)
+    OutlinedCard(
+        onClick = onClick,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(1.dp, Color(0xFFE8D48A)),
+        colors = CardDefaults.outlinedCardColors(containerColor = Color(0xFFFFF4C9).copy(alpha = 0.45f)),
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp)
+    ) {
+        Row(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(if (hasMemo) Icons.Rounded.EditNote else Icons.Rounded.Add, contentDescription = null, tint = ink)
+            Spacer(Modifier.width(8.dp))
+            Text(
+                "${date.monthValue}월 ${date.dayOfMonth}일 (${DayMask.shortName(date.dayOfWeek)}) " + if (hasMemo) "메모 보기" else "메모 작성",
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = ink
+            )
+        }
+    }
 }
 
 /** 홈 안의 메모지: 바로 입력, 0.6초 뒤 자동 저장 */
@@ -354,6 +423,51 @@ private fun ChatHeadCard(
                         Text("챗헤드 설정")
                     }
                 }
+            }
+        }
+    }
+}
+
+/** ‹  이번 주 · 10월 5일 – 11일  ›   (이번 주가 아니면 "이번 주로" 버튼) */
+@Composable
+private fun WeekHeader(
+    cells: List<WeekDayCell>,
+    offset: Long,
+    onPrev: () -> Unit,
+    onNext: () -> Unit,
+    onThisWeek: () -> Unit
+) {
+    val first = cells.firstOrNull()?.date
+    val last = cells.lastOrNull()?.date
+    val label = when (offset) {
+        0L -> "이번 주"
+        1L -> "다음 주"
+        -1L -> "지난주"
+        else -> if (offset > 0) "${offset}주 뒤" else "${-offset}주 전"
+    }
+    val range = if (first != null && last != null) {
+        if (first.monthValue == last.monthValue) "${first.monthValue}월 ${first.dayOfMonth}일 – ${last.dayOfMonth}일"
+        else "${first.monthValue}월 ${first.dayOfMonth}일 – ${last.monthValue}월 ${last.dayOfMonth}일"
+    } else ""
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp)
+    ) {
+        IconButton(onClick = onPrev) {
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, contentDescription = "지난주")
+        }
+        Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Text(range, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        IconButton(onClick = onNext) {
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "다음 주")
+        }
+    }
+    if (offset != 0L) {
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            TextButton(onClick = onThisWeek, modifier = Modifier.height(32.dp)) {
+                Text("이번 주로 돌아가기", style = MaterialTheme.typography.labelMedium)
             }
         }
     }

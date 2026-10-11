@@ -1,12 +1,12 @@
 package com.routinecheck.app.data.repository
 
-import com.routinecheck.app.data.local.dao.ChatHeadSettingsDao
-import com.routinecheck.app.data.local.entity.ChatHeadSettingsEntity
+import com.routinecheck.app.data.local.ChatHeadSettingsDao
+import com.routinecheck.app.data.local.ChatHeadSettingsEntity
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
-import javax.inject.Singleton
 
 /** 루틴 완료 시 챗헤드 동작 */
 enum class OnCompleteBehavior(val label: String) {

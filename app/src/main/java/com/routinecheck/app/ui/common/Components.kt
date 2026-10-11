@@ -31,8 +31,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.routinecheck.app.ui.theme.Brand
-import com.routinecheck.app.util.ChatHeadIconStore
+import com.routinecheck.app.chathead.ChatHeadIconStore
+import com.routinecheck.app.ui.Brand
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
