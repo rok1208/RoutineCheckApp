@@ -14,6 +14,7 @@ import androidx.room.RoomDatabase
  *  v4: + chathead_apps, chathead_settings.uiStyle / enabled
  *  v5: chathead_apps → chathead_items (앱 · 웹사이트 · 폴더 통합, 폴더 안에 넣기 가능),
  *      routines.notifyEnabled (시작 알림 선택), chathead_settings.alertMode (소리/진동)
+ *  v6: routines.message (실행 시 화면 메시지), routines.date (날짜 지정 일정)
  *
  * 스키마를 바꿀 때는 entities / version / Migrations.kt / DatabaseModule 를 함께 고쳐주세요.
  */
@@ -27,7 +28,7 @@ import androidx.room.RoomDatabase
         DailyMemoEntity::class,
         ChatHeadItemEntity::class
     ],
-    version = 5,
+    version = 6,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {

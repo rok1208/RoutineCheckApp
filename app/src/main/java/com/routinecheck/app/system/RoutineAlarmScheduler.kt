@@ -30,7 +30,7 @@ class RoutineAlarmScheduler @Inject constructor(
     fun schedule(routine: RoutineEntity, now: LocalDateTime = LocalDateTime.now()) {
         cancelMain(routine.routineId)
         if (!routine.isEnabled) return
-        val next = RoutineSchedule.nextTrigger(routine.startTime, routine.daysOfWeek, now) ?: return
+        val next = RoutineSchedule.nextTrigger(routine.startTime, routine.daysOfWeek, now, routine.date) ?: return
         val millis = next.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
         setAlarm(millis, pendingIntent(routine.routineId, ACTION_FIRE, create = true)!!)
         Log.d(TAG, "루틴 ${routine.routineId} 다음 알람: $next")

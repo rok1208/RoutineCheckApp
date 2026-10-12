@@ -17,7 +17,7 @@ import com.routinecheck.app.data.repository.toPinned
 import com.routinecheck.app.domain.ChatHeadEntry
 import com.routinecheck.app.domain.ChatHeadOrdering
 import com.routinecheck.app.domain.DateKey
-import com.routinecheck.app.domain.RoutineSchedule
+import com.routinecheck.app.data.local.occursOn
 import com.routinecheck.app.system.PermissionUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -117,7 +117,7 @@ class HomeViewModel @Inject constructor(
                     isToday = date == LocalDate.now(),
                     isSelected = date == selected,
                     hasMemo = date in memoDates,
-                    routineCount = routines.count { it.isEnabled && RoutineSchedule.isScheduledOn(it.daysOfWeek, date) }
+                    routineCount = routines.count { it.isEnabled && it.occursOn(date) }
                 )
             }
         }

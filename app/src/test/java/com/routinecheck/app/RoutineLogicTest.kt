@@ -76,6 +76,29 @@ class RoutineLogicTest {
     }
 
     @Test
+    fun schedule_firesOnceAtDateTime() {
+        // 일정 2026-10-15 15:30: 그 전이면 그 시각, 지나면 다시 울리지 않음 (요일 마스크는 무시)
+        val before = LocalDateTime.of(2026, 10, 12, 9, 0)
+        assertEquals(
+            LocalDateTime.of(2026, 10, 15, 15, 30),
+            RoutineSchedule.nextTrigger("15:30", 0, before, scheduleDate = "2026-10-15")
+        )
+        val after = LocalDateTime.of(2026, 10, 15, 15, 30)
+        assertNull(RoutineSchedule.nextTrigger("15:30", DayMask.ALL, after, scheduleDate = "2026-10-15"))
+        assertNull(RoutineSchedule.nextTrigger("15:30", 0, before, scheduleDate = "잘못된 날짜"))
+    }
+
+    @Test
+    fun schedule_occursOnlyOnItsDate() {
+        val day = LocalDate.of(2026, 10, 15) // 목
+        assertTrue(RoutineSchedule.occursOn(0, "2026-10-15", day))
+        assertFalse(RoutineSchedule.occursOn(DayMask.ALL, "2026-10-15", day.plusDays(7)))
+        // 반복 루틴은 기존 요일 판정 그대로
+        assertTrue(RoutineSchedule.occursOn(DayMask.WEEKDAYS, null, day))
+        assertFalse(RoutineSchedule.occursOn(DayMask.WEEKEND, null, day))
+    }
+
+    @Test
     fun hasStarted_boundary() {
         assertTrue(RoutineSchedule.hasStarted("07:00", LocalTime.of(7, 0)))
         assertFalse(RoutineSchedule.hasStarted("07:00", LocalTime.of(6, 59)))

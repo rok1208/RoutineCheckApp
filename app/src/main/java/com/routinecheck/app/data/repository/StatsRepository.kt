@@ -2,7 +2,7 @@ package com.routinecheck.app.data.repository
 
 import com.routinecheck.app.data.local.RoutineEntity
 import com.routinecheck.app.domain.DateKey
-import com.routinecheck.app.domain.RoutineSchedule
+import com.routinecheck.app.data.local.occursOn
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -53,7 +53,7 @@ class StatsRepository @Inject constructor(
                 val key = DateKey.of(day)
                 val parts = routines
                     .filter { it.routine.isEnabled && it.apps.isNotEmpty() }
-                    .filter { RoutineSchedule.isScheduledOn(it.routine.daysOfWeek, day) }
+                    .filter { it.routine.occursOn(day) }
                     .filter { !Instant.ofEpochMilli(it.routine.createdAt).atZone(zone).toLocalDate().isAfter(day) }
                     .map { rwa ->
                         val done = rwa.apps.count { Triple(rwa.routine.routineId, it.packageName, key) in checked }

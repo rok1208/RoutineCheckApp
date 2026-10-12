@@ -40,9 +40,13 @@ object Routes {
     const val CHATHEAD_ITEMS = "chathead_items"
     const val SETTINGS = "settings"
     const val MEMOS = "memos"
-    const val ROUTINE_EDIT = "routine_edit?routineId={routineId}"
+    /** 루틴/일정 만들기·수정. date 가 있으면 그 날짜의 새 일정 (v0.5.0) */
+    const val ROUTINE_EDIT = "routine_edit?routineId={routineId}&date={date}"
 
     fun routineEdit(routineId: Long? = null) = "routine_edit?routineId=${routineId ?: -1L}"
+
+    /** 새 일정 (yyyy-MM-dd 날짜 기준) */
+    fun scheduleNew(date: LocalDate) = "routine_edit?routineId=-1&date=$date"
 }
 
 private const val KEY_OPEN_MEMO_DATE = "openMemoDate"
@@ -99,6 +103,7 @@ fun AppRoot(pendingRoute: String?, onRouteConsumed: () -> Unit) {
                     onRequestedMemoHandled = { entry.savedStateHandle[KEY_OPEN_MEMO_DATE] = null },
                     onOpenRoutine = { navController.navigate(Routes.routineEdit(it)) },
                     onNewRoutine = { navController.navigate(Routes.routineEdit()) },
+                    onNewSchedule = { navController.navigate(Routes.scheduleNew(it)) },
                     onManageChatHeadItems = { navController.navigate(Routes.CHATHEAD_ITEMS) },
                     onOpenSettings = { navController.navigate(Routes.SETTINGS) }
                 )
@@ -106,13 +111,17 @@ fun AppRoot(pendingRoute: String?, onRouteConsumed: () -> Unit) {
             composable(Routes.ROUTINES) {
                 RoutinesScreen(
                     onOpenRoutine = { navController.navigate(Routes.routineEdit(it)) },
-                    onNewRoutine = { navController.navigate(Routes.routineEdit()) }
+                    onNewRoutine = { navController.navigate(Routes.routineEdit()) },
+                    onNewSchedule = { navController.navigate(Routes.scheduleNew(LocalDate.now())) }
                 )
             }
             composable(Routes.STATS) { StatsScreen() }
             composable(
                 Routes.ROUTINE_EDIT,
-                arguments = listOf(navArgument("routineId") { type = NavType.LongType; defaultValue = -1L })
+                arguments = listOf(
+                    navArgument("routineId") { type = NavType.LongType; defaultValue = -1L },
+                    navArgument("date") { type = NavType.StringType; defaultValue = "" }
+                )
             ) {
                 RoutineEditScreen(onBack = { navController.popBackStack() })
             }
