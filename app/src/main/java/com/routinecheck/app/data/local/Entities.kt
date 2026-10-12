@@ -38,6 +38,7 @@ data class RoutineEntity(
 
     val daysOfWeek: Int,
 
+    /** v0.5.1부터 사용 안 함 (시계 앱 알람 연동 삭제). DB 호환을 위해 컬럼만 남겨 둠, 항상 false */
     val alarmLinked: Boolean = false,
 
     val autoStart: Boolean = false,

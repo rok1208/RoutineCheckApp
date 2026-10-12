@@ -20,14 +20,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.provider.Settings
-import android.widget.Toast
 import com.routinecheck.app.domain.DayMask
 import com.routinecheck.app.domain.TimeText
 import com.routinecheck.app.system.PermissionUtils
-import com.routinecheck.app.system.SystemAlarmLinker
 import com.routinecheck.app.ui.common.AppIcon
 import com.routinecheck.app.ui.common.AppPickerDialog
 import com.routinecheck.app.ui.common.DateInput
@@ -35,8 +32,9 @@ import com.routinecheck.app.ui.common.SectionHeader
 import com.routinecheck.app.ui.common.TimeInput
 
 /**
- * ⑧ 루틴 만들기/수정: 이름, 메시지, 시각(직접 입력), 반복 요일, 등록 앱, 시작 알림(선택)·스누즈, 챗헤드 자동 펼침, 시계 알람 연동
- * v0.5.0 일정 만들기/수정: 요일 대신 날짜(직접 입력 또는 달력)를 받고, 나머지는 루틴과 같음 (시계 앱 연동만 없음)
+ * ⑧ 루틴 만들기/수정: 이름, 메시지, 시각(직접 입력), 반복 요일, 등록 앱, 시작 알림(선택)·스누즈, 챗헤드 자동 펼침
+ * v0.5.0 일정 만들기/수정: 요일 대신 날짜(직접 입력 또는 달력)를 받고, 나머지는 루틴과 같음
+ * v0.5.1 시계 앱 알람 연동 삭제 (앱 자체 알림의 소리·진동으로 충분)
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -53,16 +51,7 @@ fun RoutineEditScreen(
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
-                is RoutineEditEvent.Saved -> {
-                    event.linkAlarm?.let { routine ->
-                        try {
-                            context.startActivity(SystemAlarmLinker.setAlarmIntent(routine))
-                        } catch (e: ActivityNotFoundException) {
-                            Toast.makeText(context, "알람을 만들 수 있는 시계 앱이 없어요", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                    onBack()
-                }
+                RoutineEditEvent.Saved -> onBack()
                 RoutineEditEvent.Deleted -> onBack()
             }
         }
@@ -235,10 +224,6 @@ fun RoutineEditScreen(
 
             SectionHeader("동작")
             ToggleRow("챗헤드 자동 펼치기", "$kind 시각이 되면 챗헤드가 펼쳐지며 $kind 앱을 보여줘요", state.autoStart, viewModel::setAutoStart)
-            if (!state.isSchedule) {
-                // 시계 앱 알람 인텐트는 요일 반복만 받을 수 있어서 날짜 일정에는 표시하지 않음
-                ToggleRow("시계 앱 알람과 연동", "저장할 때 시계 앱에도 같은 시각의 알람을 만들어요", state.alarmLinked, viewModel::setAlarmLinked)
-            }
             ToggleRow("$kind 사용", "끄면 알림과 챗헤드 우선 표시가 멈춰요", state.isEnabled, viewModel::setEnabled)
             Spacer(Modifier.height(48.dp))
         }
@@ -261,10 +246,7 @@ fun RoutineEditScreen(
             onDismissRequest = { confirmDelete = false },
             title = { Text(if (state.isSchedule) "일정을 삭제할까요?" else "루틴을 삭제할까요?") },
             text = {
-                Text(
-                    if (state.isSchedule) "체크 기록과 알람도 함께 삭제돼요."
-                    else "체크 기록과 알람도 함께 삭제돼요. 시계 앱에 만든 알람은 시계 앱에서 지워 주세요."
-                )
+                Text("체크 기록과 알람도 함께 삭제돼요.")
             },
             confirmButton = {
                 TextButton(onClick = { confirmDelete = false; viewModel.delete() }) {
