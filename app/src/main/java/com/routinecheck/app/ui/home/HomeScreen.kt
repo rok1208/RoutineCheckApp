@@ -17,6 +17,7 @@ import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.EditNote
+import androidx.compose.material.icons.rounded.Event
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Tune
 import androidx.compose.material.icons.rounded.WarningAmber
@@ -30,6 +31,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -39,6 +41,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import android.content.Intent
+import com.routinecheck.app.data.local.isSchedule
 import com.routinecheck.app.data.repository.TodayRoutine
 import com.routinecheck.app.domain.ChatHeadKind
 import com.routinecheck.app.domain.DateKey
@@ -62,6 +65,8 @@ import java.time.LocalDate
 fun HomeScreen(
     onOpenRoutine: (Long) -> Unit,
     onNewRoutine: () -> Unit,
+    /** v0.5.0: 그 날짜 기준으로 새 일정 만들기 */
+    onNewSchedule: (LocalDate) -> Unit,
     onManageChatHeadItems: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenAllMemos: () -> Unit,
@@ -163,32 +168,56 @@ fun HomeScreen(
         val day = state.day
         item {
             SectionHeader(dayTitle(day)) {
+                // 일정 추가: 오늘이면 "루틴 만들기" 왼쪽, 앞으로의 날짜면 "오늘로" 왼쪽 (지난 날짜에는 없음)
+                if (day == null || !day.isPast) {
+                    CompactTextButton(
+                        text = "일정 추가",
+                        icon = Icons.Rounded.Event,
+                        onClick = { onNewSchedule(day?.date ?: LocalDate.now()) }
+                    )
+                }
                 if (day != null && !day.isToday) {
-                    TextButton(onClick = viewModel::backToToday) { Text("오늘로") }
+                    CompactTextButton(text = "오늘로", onClick = viewModel::backToToday)
                 } else {
-                    TextButton(onClick = onNewRoutine) {
-                        Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("루틴 만들기")
-                    }
+                    CompactTextButton(text = "루틴 만들기", icon = Icons.Rounded.Add, onClick = onNewRoutine)
                 }
             }
         }
 
-        val routines = day?.routines.orEmpty()
-        if (day != null && routines.isEmpty()) {
+        val schedules = day?.schedules.orEmpty()
+        val routines = day?.repeating.orEmpty()
+        if (day != null && schedules.isEmpty() && routines.isEmpty()) {
             item {
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(20.dp)) {
-                        Text(if (day.isToday) "오늘 예정된 루틴이 없어요" else "이 날 예정된 루틴이 없어요", style = MaterialTheme.typography.titleSmall)
                         Text(
-                            "루틴을 만들면 시간에 맞춰 알려주고, 루틴 앱이 챗헤드 맨 앞에 올라와요.",
+                            if (day.isToday) "오늘 예정된 일정과 루틴이 없어요" else "이 날 예정된 일정과 루틴이 없어요",
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        Text(
+                            "날짜를 정해 한 번만 울리는 일정이나 요일마다 반복되는 루틴을 만들 수 있어요. " +
+                                "시간이 되면 알려주고, 등록한 앱이 챗헤드 맨 앞에 올라와요.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
             }
+        }
+        // v0.5.0: 그 날짜의 일정이 맨 위, 그 아래 요일 반복 루틴
+        if (schedules.isNotEmpty()) {
+            item(key = "schedules-label") { ListLabel("일정") }
+            items(schedules, key = { it.routine.routineId }) { today ->
+                TodayRoutineCard(
+                    today = today,
+                    isPast = day?.isPast == true,
+                    canCheck = day?.isFuture != true,
+                    onOpen = { onOpenRoutine(today.routine.routineId) },
+                    onToggle = { pkg, checked -> viewModel.toggleCheck(today.routine.routineId, pkg, checked) }
+                )
+                Spacer(Modifier.height(10.dp))
+            }
+            if (routines.isNotEmpty()) item(key = "routines-label") { ListLabel("반복 루틴") }
         }
         items(routines, key = { it.routine.routineId }) { today ->
             TodayRoutineCard(
@@ -202,6 +231,29 @@ fun HomeScreen(
         }
         item { Spacer(Modifier.height(24.dp)) }
     }
+}
+
+/** 섹션 머리말 오른쪽의 작은 글자 버튼 (버튼 두 개가 한 줄에 들어가도록 여백을 줄임) */
+@Composable
+private fun CompactTextButton(text: String, onClick: () -> Unit, icon: ImageVector? = null) {
+    TextButton(onClick = onClick, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(4.dp))
+        }
+        Text(text)
+    }
+}
+
+/** 일정 / 반복 루틴 구분 글씨 */
+@Composable
+private fun ListLabel(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
+    )
 }
 
 /** "오늘의 루틴" / "10월 13일 (화) 루틴" */
@@ -505,7 +557,7 @@ private fun WeekStrip(cells: List<WeekDayCell>, onClick: (LocalDate) -> Unit) {
         }
     }
     Text(
-        "● 파랑: 루틴 있음  ● 노랑: 메모 있음 · 날짜를 누르면 그 날의 메모와 루틴을 볼 수 있어요",
+        "● 파랑: 루틴·일정 있음  ● 노랑: 메모 있음 · 날짜를 누르면 그 날의 메모와 일정·루틴을 볼 수 있어요",
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 6.dp)
@@ -526,25 +578,54 @@ private fun TodayRoutineCard(
     onToggle: (String, Boolean) -> Unit
 ) {
     val routine = today.routine
-    Card(modifier = Modifier.fillMaxWidth().clickable(onClick = onOpen)) {
+    val isSchedule = routine.isSchedule
+    Card(
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onOpen),
+        // 일정은 반복 루틴과 구분되게 다른 바탕색
+        colors = if (isSchedule) CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer)
+        else CardDefaults.cardColors()
+    ) {
         Column(Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
+                if (isSchedule) {
+                    Icon(
+                        Icons.Rounded.Event,
+                        contentDescription = "일정",
+                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                        modifier = Modifier.padding(end = 10.dp).size(22.dp)
+                    )
+                }
                 Column(Modifier.weight(1f)) {
                     Text(routine.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Text(
-                        "${TimeText.display(routine.startTime)} · ${DayMask.label(routine.daysOfWeek)}",
+                        if (isSchedule) "${TimeText.display(routine.startTime)} · 일정 (한 번)"
+                        else "${TimeText.display(routine.startTime)} · ${DayMask.label(routine.daysOfWeek)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
                 when {
+                    // 앱 없는 일정: 확인할 앱이 없으니 시각만 기준으로 표시
+                    isSchedule && today.apps.isEmpty() ->
+                        if (today.hasStarted) StatusChip("시간 지남", MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant)
+                        else StatusChip("예정", MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.onSurface)
                     today.isComplete -> StatusChip("완료", Brand.Green.copy(alpha = 0.18f), Brand.Green)
                     isPast -> StatusChip("미완료", MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer)
                     today.hasStarted -> StatusChip("진행 중", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer)
                     else -> StatusChip("예정", MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
+            routine.message?.takeIf { it.isNotBlank() }?.let { msg ->
+                Text(
+                    "💬 $msg",
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+            }
             if (today.apps.isEmpty()) {
+                if (isSchedule) return@Column // 일정은 앱 없이 알림·메시지만 받아도 됨
                 Text(
                     "등록된 앱이 없어요. 눌러서 앱을 추가하세요.",
                     style = MaterialTheme.typography.bodySmall,

@@ -81,4 +81,15 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
     }
 }
 
-val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+/**
+ * v5 → v6: 루틴 메시지(routines.message), 날짜 일정(routines.date).
+ * 두 컬럼 모두 비어 있을 수 있어(NULL) 기존 루틴은 그대로 "요일 반복 루틴 · 메시지 없음"이 됩니다.
+ */
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE `routines` ADD COLUMN `message` TEXT")
+        db.execSQL("ALTER TABLE `routines` ADD COLUMN `date` TEXT")
+    }
+}
+
+val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)

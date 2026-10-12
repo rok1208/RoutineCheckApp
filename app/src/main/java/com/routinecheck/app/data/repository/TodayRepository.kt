@@ -5,6 +5,8 @@ import com.routinecheck.app.data.local.RoutineEntity
 import com.routinecheck.app.domain.ActiveRoutineInput
 import com.routinecheck.app.domain.DateKey
 import com.routinecheck.app.domain.RoutineSchedule
+import com.routinecheck.app.data.local.occursOn
+import com.routinecheck.app.data.local.isSchedule
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
@@ -53,6 +55,10 @@ data class TodaySnapshot(
     val isPast: Boolean get() = day.isBefore(now.toLocalDate())
     val isFuture: Boolean get() = day.isAfter(now.toLocalDate())
     val active: List<TodayRoutine> get() = routines.filter { it.isActive }
+    /** v0.5.0: 이 날짜의 일정 (날짜 지정, 한 번만) — 홈에서 반복 루틴보다 위에 표시 */
+    val schedules: List<TodayRoutine> get() = routines.filter { it.routine.isSchedule }
+    /** 요일마다 반복되는 루틴 */
+    val repeating: List<TodayRoutine> get() = routines.filterNot { it.routine.isSchedule }
 }
 
 /**
@@ -82,7 +88,7 @@ class TodayRepository @Inject constructor(
                 .groupBy({ it.routineId }, { it.packageName })
 
             val today = routinesWithApps
-                .filter { it.routine.isEnabled && RoutineSchedule.isScheduledOn(it.routine.daysOfWeek, date) }
+                .filter { it.routine.isEnabled && it.routine.occursOn(date) }
                 .map { rwa ->
                     TodayRoutine(
                         routine = rwa.routine,
@@ -111,7 +117,7 @@ class TodayRepository @Inject constructor(
             .groupBy({ it.routineId }, { it.packageName })
         val today = now.toLocalDate()
         val routines = routinesWithApps
-            .filter { it.routine.isEnabled && RoutineSchedule.isScheduledOn(it.routine.daysOfWeek, day) }
+            .filter { it.routine.isEnabled && it.routine.occursOn(day) }
             .map { rwa ->
                 TodayRoutine(
                     routine = rwa.routine,

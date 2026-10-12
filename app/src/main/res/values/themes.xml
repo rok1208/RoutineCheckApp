@@ -4,4 +4,12 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
+
+    <!-- v0.5.0: 루틴/일정 메시지 창 (사용 중인 앱 위에 반투명하게 뜸). 밤 테마는 부모를 따라감 -->
+    <style name="Theme.RoutineCheck.Message">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowAnimationStyle">@android:style/Animation.Dialog</item>
+        <item name="android:backgroundDimEnabled">false</item>
+    </style>
 </resources>

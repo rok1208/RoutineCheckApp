@@ -11,6 +11,8 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.routinecheck.app.domain.RoutineSchedule
+import java.time.LocalDate
 
 // ─────────────────────────────── RoutineEntity
 
@@ -20,6 +22,9 @@ import androidx.room.PrimaryKey
  *
  * daysOfWeek 비트마스크: 월=1, 화=2, 수=4, 목=8, 금=16, 토=32, 일=64
  * 예) 월/수/금 = 1 + 4 + 16 = 21
+ *
+ * v6: date 가 있으면 "일정" — 그 날짜 그 시각에 한 번만 실행됩니다 (daysOfWeek 는 0, 무시).
+ *     date 가 null 이면 기존처럼 요일마다 반복되는 루틴입니다.
  */
 @Entity(tableName = "routines")
 data class RoutineEntity(
@@ -45,10 +50,22 @@ data class RoutineEntity(
     /** v5: 시작 시각 알림을 보낼지 (선택). 꺼도 챗헤드 우선 표시·자동 펼침은 그대로 동작 */
     val notifyEnabled: Boolean = true,
 
+    /** v6: 루틴/일정이 실행될 때 화면에 띄울 메시지. null 또는 빈 글이면 띄우지 않음 */
+    val message: String? = null,
+
+    /** v6: "yyyy-MM-dd". 값이 있으면 그 날짜에 한 번만 실행되는 일정, null 이면 요일 반복 루틴 */
+    val date: String? = null,
+
     val createdAt: Long = System.currentTimeMillis(),
 
     val updatedAt: Long = System.currentTimeMillis()
 )
+
+/** v6: 날짜 지정 일정인지 (false = 요일 반복 루틴) */
+val RoutineEntity.isSchedule: Boolean get() = date != null
+
+/** 이 루틴/일정이 day 에 실행되는지 */
+fun RoutineEntity.occursOn(day: LocalDate): Boolean = RoutineSchedule.occursOn(daysOfWeek, date, day)
 
 // ─────────────────────────────── RoutineAppEntity
 

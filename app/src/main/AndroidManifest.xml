@@ -54,6 +54,15 @@
             android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- v0.5.0: 루틴/일정 메시지 창 (알람 시각에 다른 앱 위로 표시) -->
+        <activity
+            android:name=".ui.message.RoutineMessageActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:launchMode="singleTask"
+            android:taskAffinity="com.routinecheck.app.message"
+            android:theme="@style/Theme.RoutineCheck.Message" />
+
         <!-- 챗헤드 오버레이 서비스 (foreground) -->
         <service
             android:name=".chathead.ChatHeadService"

@@ -1,4 +1,4 @@
-# 루틴 체크 어플 (v0.4.0)
+# 루틴 체크 어플 (v0.5.0)
 
 안드로이드의 앱 접근 방식이 비효율적이라는 문제의식에서 시작한 앱입니다.
 **화면 위 챗헤드 하나로 주요 앱·웹사이트를 바로 열고 확인**하는 것이 핵심이고,
@@ -14,10 +14,12 @@
 | 표시 순서 | 최상단: ① 진행 중 루틴의 확인 전 앱 → ② 확인한 앱 → ③ 폴더 → ④ 앱·웹사이트 (중복은 한 번만) |
 | 자동 체크 | 챗헤드에서 루틴 앱을 열면 오늘 체크 완료, 길게 누르면 수동 체크/해제 |
 | 알림 배지 | 알림 접근 권한으로 실제 미확인 알림 수 표시 (폴더는 안의 앱 합계) |
-| 루틴 | 요일·시각(숫자 직접 입력)·앱 등록, 시작 알림(선택), 스누즈, 챗헤드 자동 펼침, 시계 앱 알람 연동 |
+| 루틴 | 요일·시각(숫자 직접 입력)·앱 등록, 메시지, 시작 알림(선택), 스누즈, 챗헤드 자동 펼침, 시계 앱 알람 연동 |
+| 일정 (v0.5.0) | 년·월·일·시·분을 정해 한 번만 실행. 날짜는 숫자 직접 입력 또는 달력. 나머지 설정은 루틴과 같음 (시계 앱 연동 제외) |
+| 메시지 (v0.5.0) | 루틴/일정 시각에 사용 중인 화면 위로 메시지 창 + 알림 본문에 표시 |
 | 알림 방식 | 설정에서 소리 + 진동 / 소리 / 진동 |
 | 루틴 완료 시 | 설정에 따라 유지 / 가장자리 바로 축소 / 숨김 |
-| 홈 | 챗헤드 카드, 주간 달력(‹ › 로 주 이동), 고른 날짜의 메모지와 루틴 |
+| 홈 | 챗헤드 카드, 주간 달력(‹ › 로 주 이동), 고른 날짜의 메모지, 그 날의 일정(맨 위)과 반복 루틴, "일정 추가" 버튼 |
 | 전체 메모 | 작성한 모든 메모를 월별로 보기 · 검색 · 바로 고치기 · 삭제 · 홈에서 그 날짜 열기 |
 | 통계 | 오늘 · 30일 완료율, 연속 달성일, 최근 7일 막대, 루틴별 완료율 |
 
@@ -34,7 +36,7 @@ app/src/main/java/com/routinecheck/app/
 │   ├── ChatHeadController.kt   켜기 / 펼치기 / 끄기 명령
 │   └── ChatHeadIconStore.kt    챗헤드 이미지 저장
 ├── data/
-│   ├── local/        Room DB v5
+│   ├── local/        Room DB v6
 │   │   ├── AppDatabase.kt · Migrations.kt · DatabaseModule.kt(Hilt)
 │   │   ├── Entities.kt   테이블 7개
 │   │   └── Daos.kt       DAO 7개
@@ -64,6 +66,7 @@ app/src/main/java/com/routinecheck/app/
 | v3 | + daily_memos |
 | v4 | + chathead_apps, chathead_settings.uiStyle / enabled |
 | v5 | chathead_apps → chathead_items (앱·웹사이트·폴더), routines.notifyEnabled, chathead_settings.alertMode |
+| v6 | routines.message (실행 시 메시지), routines.date (날짜 지정 일정, NULL = 요일 반복 루틴) |
 
 스키마를 바꿀 때: `Entities.kt` 수정 → `AppDatabase.version` +1 → `Migrations.kt`에 Migration 추가 → `ALL_MIGRATIONS`에 등록.
 
@@ -72,4 +75,4 @@ app/src/main/java/com/routinecheck/app/
 1. Android Studio로 이 폴더(`settings.gradle.kts`가 있는 폴더)를 열고 Gradle Sync
 2. `app` 실행 (minSdk 26 / targetSdk 35)
 3. 온보딩에서 필수 권한(다른 앱 위에 표시) 허용 → 홈에서 챗헤드 켜기
-4. 단위 테스트: `app/src/test/.../RoutineLogicTest.kt` 우클릭 → Run (14개)
+4. 단위 테스트: `app/src/test/.../RoutineLogicTest.kt` 우클릭 → Run (16개)

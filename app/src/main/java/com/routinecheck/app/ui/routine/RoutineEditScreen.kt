@@ -30,10 +30,14 @@ import com.routinecheck.app.system.PermissionUtils
 import com.routinecheck.app.system.SystemAlarmLinker
 import com.routinecheck.app.ui.common.AppIcon
 import com.routinecheck.app.ui.common.AppPickerDialog
+import com.routinecheck.app.ui.common.DateInput
 import com.routinecheck.app.ui.common.SectionHeader
 import com.routinecheck.app.ui.common.TimeInput
 
-/** ⑧ 루틴 만들기/수정: 이름, 시각(직접 입력), 반복 요일, 등록 앱, 시작 알림(선택)·스누즈, 챗헤드 자동 펼침, 시계 알람 연동 */
+/**
+ * ⑧ 루틴 만들기/수정: 이름, 메시지, 시각(직접 입력), 반복 요일, 등록 앱, 시작 알림(선택)·스누즈, 챗헤드 자동 펼침, 시계 알람 연동
+ * v0.5.0 일정 만들기/수정: 요일 대신 날짜(직접 입력 또는 달력)를 받고, 나머지는 루틴과 같음 (시계 앱 연동만 없음)
+ */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun RoutineEditScreen(
@@ -42,6 +46,7 @@ fun RoutineEditScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val kind = if (state.isSchedule) "일정" else "루틴"
     var showAppPicker by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
 
@@ -66,7 +71,7 @@ fun RoutineEditScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (state.isNew) "새 루틴" else "루틴 수정") },
+                title = { Text(if (state.isNew) "새 $kind" else "$kind 수정") },
                 navigationIcon = {
                     IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "뒤로") }
                 },
@@ -90,13 +95,44 @@ fun RoutineEditScreen(
             OutlinedTextField(
                 value = state.name,
                 onValueChange = viewModel::setName,
-                label = { Text("루틴 이름") },
-                placeholder = { Text("예) 기상 루틴") },
+                label = { Text("$kind 이름") },
+                placeholder = { Text(if (state.isSchedule) "예) 치과 예약" else "예) 기상 루틴") },
                 isError = state.nameError,
                 supportingText = { if (state.nameError) Text("이름을 입력해 주세요") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
+
+            // v0.5.0: 실행될 때 화면에 띄울 메시지
+            OutlinedTextField(
+                value = state.message,
+                onValueChange = viewModel::setMessage,
+                label = { Text("메시지 (선택)") },
+                placeholder = { Text(if (state.isSchedule) "예) 보험증 챙기기, 10분 일찍 출발" else "예) 물 한 잔 마시고 시작하기") },
+                supportingText = {
+                    Text("$kind 시각에 사용 중인 화면 위로 이 메시지를 띄워요 · ${state.message.length}/$MESSAGE_MAX")
+                },
+                minLines = 2,
+                maxLines = 5,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            if (state.isSchedule) {
+                SectionHeader("날짜")
+                OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp)) {
+                        DateInput(date = state.date, onChange = viewModel::setDate, modifier = Modifier.fillMaxWidth())
+                        Text(
+                            "숫자를 눌러 직접 입력하거나 달력 버튼으로 고르세요 · " +
+                                "${state.date.year}년 ${state.date.monthValue}월 ${state.date.dayOfMonth}일 " +
+                                "${DayMask.shortName(state.date.dayOfWeek)}요일",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 8.dp)
+                        )
+                    }
+                }
+            }
 
             SectionHeader("시작 시각")
             OutlinedCard(modifier = Modifier.fillMaxWidth()) {
@@ -110,25 +146,35 @@ fun RoutineEditScreen(
                     )
                 }
             }
+            if (state.isPastSchedule) {
+                Text(
+                    "이미 지난 시각이에요. 저장은 되지만 알림과 메시지는 울리지 않아요.",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+            }
 
-            SectionHeader("반복 요일")
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
-                DayMask.ORDERED.forEach { day ->
-                    FilterChip(
-                        selected = DayMask.contains(state.daysOfWeek, day),
-                        onClick = { viewModel.toggleDay(day) },
-                        label = { Text(DayMask.shortName(day)) },
-                        modifier = Modifier.weight(1f)
-                    )
+            if (!state.isSchedule) {
+                SectionHeader("반복 요일")
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
+                    DayMask.ORDERED.forEach { day ->
+                        FilterChip(
+                            selected = DayMask.contains(state.daysOfWeek, day),
+                            onClick = { viewModel.toggleDay(day) },
+                            label = { Text(DayMask.shortName(day)) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AssistChip(onClick = { viewModel.setDays(DayMask.ALL) }, label = { Text("매일") })
-                AssistChip(onClick = { viewModel.setDays(DayMask.WEEKDAYS) }, label = { Text("평일") })
-                AssistChip(onClick = { viewModel.setDays(DayMask.WEEKEND) }, label = { Text("주말") })
-            }
-            if (state.daysError) {
-                Text("요일을 하나 이상 골라 주세요", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    AssistChip(onClick = { viewModel.setDays(DayMask.ALL) }, label = { Text("매일") })
+                    AssistChip(onClick = { viewModel.setDays(DayMask.WEEKDAYS) }, label = { Text("평일") })
+                    AssistChip(onClick = { viewModel.setDays(DayMask.WEEKEND) }, label = { Text("주말") })
+                }
+                if (state.daysError) {
+                    Text("요일을 하나 이상 골라 주세요", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                }
             }
 
             SectionHeader("확인할 앱") {
@@ -140,7 +186,8 @@ fun RoutineEditScreen(
             }
             if (state.apps.isEmpty()) {
                 Text(
-                    "루틴 시간에 챗헤드 맨 앞에 올라올 앱을 골라 주세요. 챗헤드에서 열면 자동으로 체크돼요.",
+                    "$kind 시간에 챗헤드 맨 앞에 올라올 앱을 골라 주세요. 챗헤드에서 열면 자동으로 체크돼요." +
+                        if (state.isSchedule) " 앱 없이 알림·메시지만 받아도 돼요." else "",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -163,7 +210,7 @@ fun RoutineEditScreen(
             }
 
             SectionHeader("알림")
-            ToggleRow("시작 알림", "루틴 시각에 알림을 보내요. 소리·진동 방식은 설정에서 바꿀 수 있어요", state.notifyEnabled, viewModel::setNotifyEnabled)
+            ToggleRow("시작 알림", "$kind 시각에 알림을 보내요. 소리·진동 방식은 설정에서 바꿀 수 있어요", state.notifyEnabled, viewModel::setNotifyEnabled)
             if (state.notifyEnabled && !PermissionUtils.hasNotificationPermission(context)) {
                 TextButton(onClick = {
                     runCatching {
@@ -187,16 +234,19 @@ fun RoutineEditScreen(
             }
 
             SectionHeader("동작")
-            ToggleRow("챗헤드 자동 펼치기", "루틴 시각이 되면 챗헤드가 펼쳐지며 루틴 앱을 보여줘요", state.autoStart, viewModel::setAutoStart)
-            ToggleRow("시계 앱 알람과 연동", "저장할 때 시계 앱에도 같은 시각의 알람을 만들어요", state.alarmLinked, viewModel::setAlarmLinked)
-            ToggleRow("루틴 사용", "끄면 알림과 챗헤드 우선 표시가 멈춰요", state.isEnabled, viewModel::setEnabled)
+            ToggleRow("챗헤드 자동 펼치기", "$kind 시각이 되면 챗헤드가 펼쳐지며 $kind 앱을 보여줘요", state.autoStart, viewModel::setAutoStart)
+            if (!state.isSchedule) {
+                // 시계 앱 알람 인텐트는 요일 반복만 받을 수 있어서 날짜 일정에는 표시하지 않음
+                ToggleRow("시계 앱 알람과 연동", "저장할 때 시계 앱에도 같은 시각의 알람을 만들어요", state.alarmLinked, viewModel::setAlarmLinked)
+            }
+            ToggleRow("$kind 사용", "끄면 알림과 챗헤드 우선 표시가 멈춰요", state.isEnabled, viewModel::setEnabled)
             Spacer(Modifier.height(48.dp))
         }
     }
 
     if (showAppPicker) {
         AppPickerDialog(
-            title = "루틴 앱 선택",
+            title = "$kind 앱 선택",
             initialSelected = state.apps,
             onDismiss = { showAppPicker = false },
             onConfirm = {
@@ -209,8 +259,13 @@ fun RoutineEditScreen(
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("루틴을 삭제할까요?") },
-            text = { Text("체크 기록과 알람도 함께 삭제돼요. 시계 앱에 만든 알람은 시계 앱에서 지워 주세요.") },
+            title = { Text(if (state.isSchedule) "일정을 삭제할까요?" else "루틴을 삭제할까요?") },
+            text = {
+                Text(
+                    if (state.isSchedule) "체크 기록과 알람도 함께 삭제돼요."
+                    else "체크 기록과 알람도 함께 삭제돼요. 시계 앱에 만든 알람은 시계 앱에서 지워 주세요."
+                )
+            },
             confirmButton = {
                 TextButton(onClick = { confirmDelete = false; viewModel.delete() }) {
                     Text("삭제", color = MaterialTheme.colorScheme.error)

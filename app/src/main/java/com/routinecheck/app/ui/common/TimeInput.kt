@@ -24,6 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
@@ -88,9 +90,13 @@ fun TimeInput(
     }
 }
 
-/** 두 자리 숫자 칸. 누르면 비워지고(이전 값은 흐리게 표시), 범위를 넘는 숫자는 받지 않음 */
+/**
+ * 숫자 칸 (기본 두 자리). 누르면 비워지고(이전 값은 흐리게 표시), 범위를 넘는 숫자는 받지 않음.
+ * @param length 자릿수 (연도는 4)
+ * @param canCommit 이 글자에서 값을 반영할지 (연도처럼 다 쳐야 의미 있는 칸용)
+ */
 @Composable
-private fun DigitField(
+internal fun DigitField(
     value: Int,
     max: Int,
     isComplete: (String) -> Boolean,
@@ -98,13 +104,17 @@ private fun DigitField(
     onNext: () -> Unit,
     imeAction: ImeAction,
     description: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    length: Int = 2,
+    width: Dp = 84.dp,
+    canCommit: (String) -> Boolean = { true },
+    textStyle: TextStyle = MaterialTheme.typography.displaySmall
 ) {
     /** null = 입력 중이 아님(현재 값 표시), "" 이상 = 입력 중인 글자 */
     var editing by remember { mutableStateOf<String?>(null) }
     var focused by remember { mutableStateOf(false) }
-    val shown = "%02d".format(value)
-    val style = MaterialTheme.typography.displaySmall.copy(
+    val shown = "%0${length}d".format(value)
+    val style = textStyle.copy(
         fontWeight = FontWeight.Bold,
         textAlign = TextAlign.Center,
         color = MaterialTheme.colorScheme.onSurface
@@ -113,11 +123,11 @@ private fun DigitField(
     BasicTextField(
         value = editing ?: shown,
         onValueChange = { raw ->
-            val digits = raw.filter(Char::isDigit).take(2)
+            val digits = raw.filter(Char::isDigit).take(length)
             val n = digits.toIntOrNull()
             if (n != null && n > max) return@BasicTextField
             editing = digits
-            if (n != null) {
+            if (n != null && canCommit(digits)) {
                 onCommit(n)
                 if (isComplete(digits)) onNext()
             }
@@ -128,7 +138,7 @@ private fun DigitField(
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = imeAction),
         keyboardActions = KeyboardActions(onNext = { onNext() }, onDone = { onNext() }),
         modifier = modifier
-            .width(84.dp)
+            .width(width)
             .semantics { contentDescription = "$description 입력" }
             .onFocusChanged { state ->
                 if (state.isFocused && !focused) editing = ""
