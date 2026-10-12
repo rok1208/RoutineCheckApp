@@ -91,7 +91,7 @@ class RoutineEditViewModel @Inject constructor(
                         it.copy(
                             isLoading = false, isNew = true, isSchedule = true, date = scheduleDateArg,
                             hour = if (scheduleDateArg == LocalDate.now()) nextHour else 9, minute = 0,
-                            autoStart = false, alarmLinked = false, snoozeMinutes = 5
+                            autoStart = false, snoozeMinutes = 5
                         )
                     } else {
                         it.copy(isLoading = false, isNew = true)
