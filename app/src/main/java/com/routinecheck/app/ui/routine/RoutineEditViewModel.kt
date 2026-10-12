@@ -42,7 +42,6 @@ data class RoutineEditUiState(
     val minute: Int = 0,
     val daysOfWeek: Int = DayMask.WEEKDAYS,
     val autoStart: Boolean = true,
-    val alarmLinked: Boolean = false,
     /** null이면 스누즈 없음 */
     val snoozeMinutes: Int? = 10,
     val isEnabled: Boolean = true,
@@ -58,8 +57,7 @@ data class RoutineEditUiState(
 }
 
 sealed interface RoutineEditEvent {
-    /** 저장 완료. linkAlarm이 있으면 화면에서 시계 앱 알람 인텐트를 실행 */
-    data class Saved(val linkAlarm: RoutineEntity?) : RoutineEditEvent
+    data object Saved : RoutineEditEvent
     data object Deleted : RoutineEditEvent
 }
 
@@ -114,7 +112,6 @@ class RoutineEditViewModel @Inject constructor(
                     minute = time.minute,
                     daysOfWeek = r.daysOfWeek,
                     autoStart = r.autoStart,
-                    alarmLinked = r.alarmLinked,
                     snoozeMinutes = r.snoozeMinutes,
                     isEnabled = r.isEnabled,
                     notifyEnabled = r.notifyEnabled,
@@ -131,7 +128,6 @@ class RoutineEditViewModel @Inject constructor(
     fun toggleDay(day: DayOfWeek) = _state.update { it.copy(daysOfWeek = DayMask.toggle(it.daysOfWeek, day), daysError = false) }
     fun setDays(mask: Int) = _state.update { it.copy(daysOfWeek = mask, daysError = false) }
     fun setAutoStart(value: Boolean) = _state.update { it.copy(autoStart = value) }
-    fun setAlarmLinked(value: Boolean) = _state.update { it.copy(alarmLinked = value) }
     fun setSnooze(minutes: Int?) = _state.update { it.copy(snoozeMinutes = minutes) }
     fun setEnabled(value: Boolean) = _state.update { it.copy(isEnabled = value) }
     fun setNotifyEnabled(value: Boolean) = _state.update { it.copy(notifyEnabled = value) }
@@ -164,21 +160,15 @@ class RoutineEditViewModel @Inject constructor(
                 date = if (s.isSchedule) DateKey.of(s.date) else null,
                 message = s.message.trim().ifBlank { null },
                 autoStart = s.autoStart,
-                // 시계 앱 알람은 요일 반복만 지원해서 일정에서는 쓰지 않음
-                alarmLinked = s.alarmLinked && !s.isSchedule,
+                // v0.5.1 시계 앱 알람 연동 삭제: 컬럼은 남겨 두고 항상 false
+                alarmLinked = false,
                 snoozeMinutes = s.snoozeMinutes,
                 isEnabled = s.isEnabled,
                 notifyEnabled = s.notifyEnabled
             )
             val apps = s.apps.map { RoutineAppEntity(routineId = 0, packageName = it.packageName, appLabel = it.label) }
-            val savedId = routineRepository.saveRoutine(routine, apps)
-
-            // 시계 앱 알람: 새로 연동을 켰거나, 연동 중인데 시간/요일이 바뀐 경우에만 다시 만듦
-            val needsLink = routine.alarmLinked && (
-                base == null || !base.alarmLinked ||
-                    base.startTime != routine.startTime || base.daysOfWeek != routine.daysOfWeek
-                )
-            _events.emit(RoutineEditEvent.Saved(if (needsLink) routine.copy(routineId = savedId) else null))
+            routineRepository.saveRoutine(routine, apps)
+            _events.emit(RoutineEditEvent.Saved)
         }
     }
 
