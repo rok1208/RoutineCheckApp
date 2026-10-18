@@ -147,7 +147,8 @@ fun HomeScreen(
                 onNext = { viewModel.shiftWeek(1) },
                 onThisWeek = viewModel::backToToday
             )
-            Box(Modifier.coachTarget("home.week")) {
+            // WeekStrip 은 날짜 줄 + 설명 문구 두 덩어리라 위아래로 쌓이는 Column 으로 감쌈 (Box 면 겹침)
+            Column(Modifier.coachTarget("home.week")) {
                 WeekStrip(cells = state.week, onClick = viewModel::selectDate)
             }
         }
