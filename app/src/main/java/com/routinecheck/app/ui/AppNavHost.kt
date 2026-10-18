@@ -157,7 +157,10 @@ fun AppRoot(pendingRoute: String?, onRouteConsumed: () -> Unit) {
                     onReplayGuide = {
                         // 모든 화면의 가이드를 처음 상태로 돌리고 홈에서 다시 시작
                         coachMarks.resetAll()
-                        navController.navigateTab(Routes.HOME)
+                        // 설정 화면을 닫고 아래에 있는 홈으로 (navigateTab 은 홈이 시작 화면이라 이동하지 않았음)
+                        if (!navController.popBackStack(Routes.HOME, inclusive = false)) {
+                            navController.navigateTab(Routes.HOME)
+                        }
                     }
                 )
             }

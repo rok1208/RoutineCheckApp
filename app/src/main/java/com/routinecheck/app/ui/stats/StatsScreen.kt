@@ -211,11 +211,16 @@ fun StatsScreen(viewModel: StatsViewModel = hiltViewModel()) {
             WeekCompare(s.weekRate, s.prevWeekRate)
             WeekChart(s.week)
 
-            SectionHeader("5주 달력", modifier = Modifier.coachTarget("stats.calendar"))
-            MonthCalendar(s.calendar)
+            // 가이드에서 제목만이 아니라 달력·배지 전체를 강조하도록 함께 묶음
+            Column(Modifier.coachTarget("stats.calendar")) {
+                SectionHeader("5주 달력")
+                MonthCalendar(s.calendar)
+            }
 
-            SectionHeader("배지 ${state.badges.count { it.earned }}/${state.badges.size}", modifier = Modifier.coachTarget("stats.badges"))
-            BadgeGrid(state.badges, onClick = { badgeDetail = it })
+            Column(Modifier.coachTarget("stats.badges")) {
+                SectionHeader("배지 ${state.badges.count { it.earned }}/${state.badges.size}")
+                BadgeGrid(state.badges, onClick = { badgeDetail = it })
+            }
 
             SectionHeader("루틴별 (최근 30일)")
             if (s.perRoutine.isEmpty()) {
