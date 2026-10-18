@@ -168,16 +168,24 @@ fun HomeScreen(
         val day = state.day
         item {
             SectionHeader(dayTitle(day)) {
-                // 일정 추가: 오늘이면 "루틴 만들기" 왼쪽, 앞으로의 날짜면 "오늘로" 왼쪽 (지난 날짜에는 없음)
-                if (day == null || !day.isPast) {
+                // 오늘:            [일정 추가] [루틴 만들기]
+                // 앞으로의 날짜:   [일정 추가] [루틴 추가] [오늘로]
+                // 지난 날짜:       [루틴 추가] [오늘로]   (지난 날짜에는 일정을 만들지 않음)
+                // 버튼이 세 개일 때는 제목과 한 줄에 들어가도록 아이콘을 빼고 여백을 줄임
+                val otherDay = day != null && !day.isToday
+                val canAddSchedule = day == null || !day.isPast
+                val compact = otherDay && canAddSchedule
+                if (canAddSchedule) {
                     CompactTextButton(
                         text = "일정 추가",
-                        icon = Icons.Rounded.Event,
+                        icon = if (compact) null else Icons.Rounded.Event,
+                        compact = compact,
                         onClick = { onNewSchedule(day?.date ?: LocalDate.now()) }
                     )
                 }
-                if (day != null && !day.isToday) {
-                    CompactTextButton(text = "오늘로", onClick = viewModel::backToToday)
+                if (otherDay) {
+                    CompactTextButton(text = "루틴 추가", compact = compact, onClick = onNewRoutine)
+                    CompactTextButton(text = "오늘로", compact = compact, onClick = viewModel::backToToday)
                 } else {
                     CompactTextButton(text = "루틴 만들기", icon = Icons.Rounded.Add, onClick = onNewRoutine)
                 }
@@ -235,8 +243,12 @@ fun HomeScreen(
 
 /** 섹션 머리말 오른쪽의 작은 글자 버튼 (버튼 두 개가 한 줄에 들어가도록 여백을 줄임) */
 @Composable
-private fun CompactTextButton(text: String, onClick: () -> Unit, icon: ImageVector? = null) {
-    TextButton(onClick = onClick, contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)) {
+private fun CompactTextButton(text: String, onClick: () -> Unit, icon: ImageVector? = null, compact: Boolean = false) {
+    TextButton(
+        onClick = onClick,
+        contentPadding = PaddingValues(horizontal = if (compact) 6.dp else 8.dp, vertical = 4.dp),
+        modifier = if (compact) Modifier.defaultMinSize(minWidth = 1.dp) else Modifier
+    ) {
         if (icon != null) {
             Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(4.dp))
