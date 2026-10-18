@@ -1,5 +1,7 @@
 package com.routinecheck.app.domain
 
+import java.time.LocalDate
+
 /**
  * 통계 화면의 성취감 요소 (v0.6.0) — 순수 로직, 단위 테스트 대상.
  *
@@ -160,4 +162,28 @@ object CheerMessages {
         rate > 0f -> "조금씩 늘려 봐요"
         else -> "오늘부터 시작해 봐요"
     }
+}
+
+/** 통계 기간 계산 (v0.6.0: 모든 통계는 앱을 설치한 날부터) */
+object StatsPeriod {
+
+    /** 그 날이 속한 주의 월요일 (홈 주간 달력과 같은 월~일 기준) */
+    fun weekStart(day: LocalDate): LocalDate = day.minusDays((day.dayOfWeek.value - 1).toLong())
+
+    /**
+     * 통계 시작일 = 설치일. 단, 너무 오래된 기록까지 매번 계산하지 않도록 최근 maxDays 일로 제한하고,
+     * 설치일이 오늘보다 뒤로 잡히는 경우(시계 변경 등)는 오늘로 맞춥니다.
+     */
+    fun startDate(installDate: LocalDate, today: LocalDate, maxDays: Long): LocalDate {
+        val earliest = today.minusDays(maxDays - 1)
+        return when {
+            installDate.isAfter(today) -> today
+            installDate.isBefore(earliest) -> earliest
+            else -> installDate
+        }
+    }
+
+    /** 시작일 기준 며칠째인지 (설치한 날 = 1일째) */
+    fun dayNumber(start: LocalDate, today: LocalDate): Int =
+        (java.time.temporal.ChronoUnit.DAYS.between(start, today) + 1).toInt().coerceAtLeast(1)
 }

@@ -4,6 +4,8 @@ import com.routinecheck.app.domain.AchievementBadge
 import com.routinecheck.app.domain.AchievementMetrics
 import com.routinecheck.app.domain.CheerMessages
 import com.routinecheck.app.domain.RoutineLevel
+import com.routinecheck.app.domain.StatsPeriod
+import java.time.LocalDate
 import com.routinecheck.app.domain.Streaks
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -63,5 +65,19 @@ class AchievementsTest {
         assertEquals("거의 다 왔어요! 1개만 더", CheerMessages.of(3, 2, 2, 5, true).headline)
         assertEquals("오늘 끝내면 연속 3일이 돼요 🔥", CheerMessages.of(3, 2, 2, 5, true).detail)
         assertEquals("오늘 끝내면 연속 6일로 최고 기록을 넘어요 🔥", CheerMessages.of(4, 0, 5, 5, true).detail)
+    }
+
+    @Test
+    fun statsPeriod_startsAtInstallDate() {
+        val today = LocalDate.of(2026, 10, 18)
+        // 오늘 설치 → 통계는 오늘 하루만 (1일째)
+        assertEquals(today, StatsPeriod.startDate(today, today, 365))
+        assertEquals(1, StatsPeriod.dayNumber(today, today))
+        // 아주 오래전 설치 → 최근 365일로 제한
+        assertEquals(today.minusDays(364), StatsPeriod.startDate(LocalDate.of(2020, 1, 1), today, 365))
+        // 설치일이 미래로 잡히면 오늘로
+        assertEquals(today, StatsPeriod.startDate(today.plusDays(3), today, 365))
+        // 2026-10-18(일)이 속한 주의 월요일 = 10-12
+        assertEquals(LocalDate.of(2026, 10, 12), StatsPeriod.weekStart(today))
     }
 }
