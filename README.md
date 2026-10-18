@@ -33,7 +33,7 @@
 
 | 통계 · 성취 | 권한 요청 · 설정 |
 |---|---|
-| ![통계](docs/screenshots/v060_stats.png) | ![권한](docs/screenshots/v060_permission.png) |
+| ![통계](docs/screenshots/v060_stats_v2.png) | ![권한](docs/screenshots/v060_permission.png) |
 
 ## 프로젝트 구조 (53개 파일 · 16개 폴더)
 
