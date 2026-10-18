@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -40,7 +41,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import android.content.Intent
 import com.routinecheck.app.data.local.isSchedule
 import com.routinecheck.app.data.repository.TodayRoutine
 import com.routinecheck.app.domain.ChatHeadKind
@@ -54,7 +54,11 @@ import com.routinecheck.app.ui.common.ChatHeadItemIcon
 import com.routinecheck.app.ui.common.ChatHeadPreview
 import com.routinecheck.app.ui.common.SectionHeader
 import com.routinecheck.app.ui.common.StatusChip
-import com.routinecheck.app.ui.onboarding.OnboardingActivity
+import com.routinecheck.app.ui.common.CoachStep
+import com.routinecheck.app.ui.common.CoachTour
+import com.routinecheck.app.ui.common.coachTarget
+import com.routinecheck.app.ui.common.enableChatHead
+import com.routinecheck.app.ui.common.rememberPermissionRequester
 import java.time.LocalDate
 
 /**
@@ -77,8 +81,23 @@ fun HomeScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val memo by viewModel.memo.collectAsStateWithLifecycle()
-    val context = LocalContext.current
+    val permissionRequester = rememberPermissionRequester()
+    val listState = rememberLazyListState()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshPermissions() }
+
+    // 챗헤드 켜기는 "다른 앱 위에 표시" 권한을 확인한 뒤에만 (v0.6.0 권한은 쓰려는 순간에 요청)
+    val toggleChatHead: (Boolean) -> Unit = { on ->
+        if (on) permissionRequester.enableChatHead { viewModel.setChatHeadEnabled(true) }
+        else viewModel.setChatHeadEnabled(false)
+    }
+    // 위에서부터 셌을 때 "오늘의 루틴" 머리말의 위치 (가이드에서 스크롤할 때 사용)
+    val showPermissionCard = state.permissions.requiredMissing && state.settings.enabled
+    val dayHeaderIndex = 5 + if (showPermissionCard) 1 else 0
+
+    CoachTour(id = "home", steps = homeTourSteps(
+        scrollTop = { listState.animateScrollToItem(0) },
+        scrollToDayHeader = { listState.animateScrollToItem(dayHeaderIndex - 1) }
+    ))
     LaunchedEffect(requestedMemoDate) {
         if (requestedMemoDate != null) {
             viewModel.showMemo(requestedMemoDate)
@@ -88,6 +107,7 @@ fun HomeScreen(
     LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) { viewModel.flushMemo() }
 
     LazyColumn(
+        state = listState,
         modifier = Modifier.fillMaxSize().statusBarsPadding().imePadding(),
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
     ) {
@@ -97,22 +117,23 @@ fun HomeScreen(
                     Text(todayTitle(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("루틴 체크", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 }
-                IconButton(onClick = onOpenSettings) { Icon(Icons.Rounded.Settings, contentDescription = "설정") }
+                IconButton(onClick = onOpenSettings, modifier = Modifier.coachTarget("home.settings")) {
+                    Icon(Icons.Rounded.Settings, contentDescription = "설정")
+                }
             }
         }
 
-        if (state.permissions.requiredMissing) {
+        // 챗헤드를 켜 두었는데 권한이 빠진 경우(설정에서 직접 끈 경우 등)에만 경고
+        if (showPermissionCard) {
             item {
-                PermissionWarningCard(onFix = {
-                    context.startActivity(Intent(context, OnboardingActivity::class.java).putExtra(OnboardingActivity.EXTRA_FROM_APP, true))
-                })
+                PermissionWarningCard(onFix = { toggleChatHead(true) })
             }
         }
 
         item {
             ChatHeadCard(
                 state = state,
-                onToggle = viewModel::setChatHeadEnabled,
+                onToggle = toggleChatHead,
                 onManageApps = onManageChatHeadItems,
                 onOpenSettings = onOpenSettings
             )
@@ -126,7 +147,9 @@ fun HomeScreen(
                 onNext = { viewModel.shiftWeek(1) },
                 onThisWeek = viewModel::backToToday
             )
-            WeekStrip(cells = state.week, onClick = viewModel::selectDate)
+            Box(Modifier.coachTarget("home.week")) {
+                WeekStrip(cells = state.week, onClick = viewModel::selectDate)
+            }
         }
 
         // 요일을 누르면 달력과 루틴 사이에 그 날의 메모지가 펼쳐짐
@@ -142,11 +165,13 @@ fun HomeScreen(
             // 메모지를 닫으면 그 자리에 "메모 작성" 버튼 (메모가 있는 날이면 "메모 보기")
             val selected = state.week.firstOrNull { it.isSelected }
             item(key = "memo-open") {
-                MemoOpenButton(
-                    date = selected?.date ?: memo.date,
-                    hasMemo = selected?.hasMemo == true,
-                    onClick = viewModel::openMemo
-                )
+                Box(Modifier.coachTarget("home.memo")) {
+                    MemoOpenButton(
+                        date = selected?.date ?: memo.date,
+                        hasMemo = selected?.hasMemo == true,
+                        onClick = viewModel::openMemo
+                    )
+                }
             }
         }
         // 메모 아래 작은 버튼: 지금까지 쓴 모든 메모 보기·관리
@@ -167,7 +192,7 @@ fun HomeScreen(
 
         val day = state.day
         item {
-            SectionHeader(dayTitle(day)) {
+            SectionHeader(dayTitle(day), modifier = Modifier.coachTarget("home.add")) {
                 // 오늘:            [일정 추가] [루틴 만들기]
                 // 앞으로의 날짜:   [일정 추가] [루틴 추가] [오늘로]
                 // 지난 날짜:       [루틴 추가] [오늘로]   (지난 날짜에는 일정을 만들지 않음)
@@ -267,6 +292,62 @@ private fun ListLabel(text: String) {
         modifier = Modifier.padding(start = 4.dp, bottom = 6.dp)
     )
 }
+
+/** 홈 화면 코치마크 가이드 (앱을 처음 열 때) */
+private fun homeTourSteps(
+    scrollTop: suspend () -> Unit,
+    scrollToDayHeader: suspend () -> Unit
+): List<CoachStep> = listOf(
+    CoachStep(
+        target = null,
+        title = "루틴 체크에 오신 걸 환영해요 👋",
+        body = "챗헤드로 자주 쓰는 앱을 바로 열고, 매일 할 루틴을 놓치지 않게 도와주는 앱이에요. 주요 기능을 1분 안에 보여드릴게요.",
+        prepare = scrollTop
+    ),
+    CoachStep(
+        target = "home.chathead",
+        title = "챗헤드",
+        body = "켜 두면 어느 화면에서든 작은 동그라미가 떠 있어요. 누르면 앱 목록이 펼쳐지고, 화면 끝까지 밀면 가장자리 바로 숨어요. 아래쪽 X로 끌어다 놓으면 꺼져요.",
+        prepare = scrollTop
+    ),
+    CoachStep(
+        target = "home.chathead.toggle",
+        title = "챗헤드 켜기·끄기",
+        body = "여기서 챗헤드를 켜고 꺼요. 처음 켤 때 '다른 앱 위에 표시' 권한을 물어봐요."
+    ),
+    CoachStep(
+        target = "home.chathead.items",
+        title = "챗헤드 항목",
+        body = "챗헤드에 띄울 앱·웹사이트·폴더를 고르고 순서를 정해요. 루틴 시간에는 그 루틴의 앱이 맨 앞에 와요."
+    ),
+    CoachStep(
+        target = "home.week",
+        title = "주간 달력",
+        body = "날짜를 누르면 그 날의 루틴과 메모가 보여요. 위쪽 ‹ › 로 지난주·다음 주로 넘어가요."
+    ),
+    CoachStep(
+        target = "home.memo",
+        title = "날짜별 메모",
+        body = "고른 날짜의 할 일이나 생각을 적어요. 입력하면 바로 자동 저장돼요."
+    ),
+    CoachStep(
+        target = "home.add",
+        title = "일정·루틴 만들기",
+        body = "루틴은 고른 요일마다 반복되고, 일정은 정한 날짜에 한 번만 실행돼요. 시간이 되면 알려주고, 등록한 앱이 챗헤드 맨 앞에 올라와요.",
+        prepare = scrollToDayHeader
+    ),
+    CoachStep(
+        target = "nav.tabs",
+        title = "루틴 · 통계 탭",
+        body = "루틴 탭에서 모든 루틴과 일정을 관리하고, 통계 탭에서 달성률과 연속 기록, 배지를 확인해요."
+    ),
+    CoachStep(
+        target = "home.settings",
+        title = "설정",
+        body = "챗헤드 모양, 알림 방식, 권한을 바꿀 수 있어요. 이 가이드도 설정에서 언제든 다시 볼 수 있어요.",
+        prepare = scrollTop
+    )
+)
 
 /** "오늘의 루틴" / "10월 13일 (화) 루틴" */
 private fun dayTitle(day: com.routinecheck.app.data.repository.TodaySnapshot?): String {
@@ -395,7 +476,7 @@ private fun ChatHeadCard(
     val settings = state.settings
     Card(
         shape = RoundedCornerShape(24.dp),
-        modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+        modifier = Modifier.fillMaxWidth().padding(top = 16.dp).coachTarget("home.chathead")
     ) {
         Box(
             Modifier
@@ -421,7 +502,7 @@ private fun ChatHeadCard(
                     Switch(
                         checked = settings.enabled && !state.permissions.overlayMissing,
                         onCheckedChange = onToggle,
-                        enabled = !state.permissions.overlayMissing,
+                        modifier = Modifier.coachTarget("home.chathead.toggle"),
                         colors = SwitchDefaults.colors(checkedTrackColor = Color.White.copy(alpha = 0.5f), checkedThumbColor = Color.White)
                     )
                 }
@@ -476,7 +557,7 @@ private fun ChatHeadCard(
 
                 Spacer(Modifier.height(14.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilledTonalButton(onClick = onManageApps) {
+                    FilledTonalButton(onClick = onManageApps, modifier = Modifier.coachTarget("home.chathead.items")) {
                         Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
                         Text("항목 관리")

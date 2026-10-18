@@ -17,7 +17,8 @@ import dagger.hilt.android.AndroidEntryPoint
 
 /**
  * 앱의 첫 진입 화면 (LAUNCHER).
- * 필수 권한이 이미 모두 있으면 바로 MainActivity로 넘어가고, 없으면 권한 안내를 보여줍니다.
+ * 필수 권한(다른 앱 위에 표시)이 이미 있으면 바로 MainActivity로 넘어가고, 없으면 권한 안내를 보여줍니다.
+ * v0.6.0: 첫 실행에는 이 권한 하나만 요청하고, 나머지는 기능을 쓸 때 요청합니다.
  *
  *  - 오버레이 / 정확한 알람 / 알림 접근 / 배터리 최적화 → 설정 앱의 해당 화면으로 이동
  *  - 알림(POST_NOTIFICATIONS) → 시스템 권한 다이얼로그 (Android 13+)
@@ -38,7 +39,9 @@ class OnboardingActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (!fromApp && savedInstanceState == null && PermissionUtils.requiredPermissionsGranted(this)) {
+        // "나중에 할게요"로 한 번 넘어간 사용자는 매번 붙잡지 않음 (챗헤드를 켤 때 다시 요청)
+        val skipped = getSharedPreferences(PREFS_NAME, MODE_PRIVATE).getBoolean(KEY_SKIPPED, false)
+        if (!fromApp && savedInstanceState == null && (skipped || PermissionUtils.requiredPermissionsGranted(this))) {
             goToMain()
             return
         }
@@ -49,7 +52,11 @@ class OnboardingActivity : ComponentActivity() {
                 OnboardingScreen(
                     uiState = uiState,
                     onRequestPermission = ::requestPermission,
-                    onFinish = ::goToMain
+                    onFinish = ::goToMain,
+                    onSkip = {
+                        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit().putBoolean(KEY_SKIPPED, true).apply()
+                        viewModel.skip(::goToMain)
+                    }
                 )
             }
         }
@@ -86,5 +93,7 @@ class OnboardingActivity : ComponentActivity() {
 
     companion object {
         const val EXTRA_FROM_APP = "from_app"
+        private const val PREFS_NAME = "onboarding"
+        private const val KEY_SKIPPED = "skipped"
     }
 }

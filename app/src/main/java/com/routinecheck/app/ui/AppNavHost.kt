@@ -14,6 +14,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import android.content.Context
+import com.routinecheck.app.ui.common.CoachMarkHost
+import com.routinecheck.app.ui.common.CoachMarkState
+import com.routinecheck.app.ui.common.coachTarget
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -73,10 +79,17 @@ fun AppRoot(pendingRoute: String?, onRouteConsumed: () -> Unit) {
         }
     }
 
+    // v0.6.0 코치마크 가이드: 앱 전체에서 하나의 상태를 공유
+    val context = LocalContext.current
+    val coachMarks = remember {
+        CoachMarkState(context.applicationContext.getSharedPreferences(CoachMarkState.PREFS_NAME, Context.MODE_PRIVATE))
+    }
+
+    CoachMarkHost(coachMarks) {
     Scaffold(
         bottomBar = {
             if (TABS.any { it.route == currentRoute }) {
-                NavigationBar {
+                NavigationBar(Modifier.coachTarget("nav.tabs")) {
                     TABS.forEach { tab ->
                         NavigationBarItem(
                             selected = currentRoute == tab.route,
@@ -140,10 +153,16 @@ fun AppRoot(pendingRoute: String?, onRouteConsumed: () -> Unit) {
             composable(Routes.SETTINGS) {
                 SettingsScreen(
                     onBack = { navController.popBackStack() },
-                    onManageChatHeadItems = { navController.navigate(Routes.CHATHEAD_ITEMS) }
+                    onManageChatHeadItems = { navController.navigate(Routes.CHATHEAD_ITEMS) },
+                    onReplayGuide = {
+                        // 모든 화면의 가이드를 처음 상태로 돌리고 홈에서 다시 시작
+                        coachMarks.resetAll()
+                        navController.navigateTab(Routes.HOME)
+                    }
                 )
             }
         }
+    }
     }
 }
 

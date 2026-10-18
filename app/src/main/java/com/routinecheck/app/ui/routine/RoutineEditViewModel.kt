@@ -143,14 +143,21 @@ class RoutineEditViewModel @Inject constructor(
         s.copy(apps = list)
     }
 
-    fun save() {
+    /** 입력 확인. 잘못된 칸이 있으면 오류 표시 후 false (권한을 묻기 전에 먼저 확인) */
+    fun validate(): Boolean {
         val s = _state.value
         val nameError = s.name.isBlank()
         val daysError = !s.isSchedule && s.daysOfWeek and DayMask.ALL == 0
         if (nameError || daysError) {
             _state.update { it.copy(nameError = nameError, daysError = daysError) }
-            return
+            return false
         }
+        return true
+    }
+
+    fun save() {
+        if (!validate()) return
+        val s = _state.value
         viewModelScope.launch {
             val base = original
             val routine = (base ?: RoutineEntity(name = "", startTime = "", daysOfWeek = 0)).copy(

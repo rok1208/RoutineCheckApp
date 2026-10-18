@@ -90,6 +90,10 @@ interface ChecklistStateDao {
     @Query("SELECT * FROM routine_checklist_state WHERE date = :date")
     fun observeAllForDate(date: String): Flow<List<RoutineChecklistStateEntity>>
 
+    /** 지금까지 확인한 앱 수 (통계 레벨·배지) */
+    @Query("SELECT COUNT(*) FROM routine_checklist_state WHERE isChecked = 1")
+    fun observeCheckedCount(): Flow<Int>
+
     /** 기간 내 체크 상태 (통계 화면) */
     @Query("SELECT * FROM routine_checklist_state WHERE date BETWEEN :from AND :to")
     fun observeBetween(from: String, to: String): Flow<List<RoutineChecklistStateEntity>>

@@ -40,6 +40,9 @@ import com.routinecheck.app.data.repository.OnCompleteBehavior
 import com.routinecheck.app.ui.Brand
 import com.routinecheck.app.ui.common.ChatHeadPreview
 import com.routinecheck.app.ui.common.SectionHeader
+import com.routinecheck.app.ui.common.enableChatHead
+import com.routinecheck.app.ui.common.rememberPermissionRequester
+import androidx.compose.material.icons.rounded.School
 
 /** ⑦ 챗헤드 설정 + 권한 상태 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -47,8 +50,11 @@ import com.routinecheck.app.ui.common.SectionHeader
 fun SettingsScreen(
     onBack: () -> Unit,
     onManageChatHeadItems: () -> Unit,
+    /** v0.6.0: 모든 화면의 코치마크 가이드를 처음부터 다시 보기 */
+    onReplayGuide: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
+    val permissionRequester = rememberPermissionRequester()
     val settings by viewModel.settings.collectAsStateWithLifecycle()
     val permissions by viewModel.permissions.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -81,7 +87,13 @@ fun SettingsScreen(
                     Text("챗헤드 사용", style = MaterialTheme.typography.titleMedium)
                     Text("끄면 화면에서 사라지고, 재부팅 후에도 다시 뜨지 않아요", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                Switch(checked = s.enabled, onCheckedChange = { viewModel.setEnabled(it) })
+                Switch(
+                    checked = s.enabled,
+                    onCheckedChange = { on ->
+                        // 켤 때는 "다른 앱 위에 표시" 권한부터 확인
+                        if (on) permissionRequester.enableChatHead { viewModel.setEnabled(true) } else viewModel.setEnabled(false)
+                    }
+                )
             }
 
             SectionHeader("펼침 방식")
@@ -176,7 +188,34 @@ fun SettingsScreen(
                 modifier = Modifier.padding(top = 6.dp)
             )
 
+            SectionHeader("가이드")
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onReplayGuide)
+                    .padding(vertical = 8.dp)
+            ) {
+                Icon(Icons.Rounded.School, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("가이드 다시 보기", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        "홈·루틴·통계 등 각 화면을 처음 열 때 나오는 기능 설명을 다시 보여드려요",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null)
+            }
+
             SectionHeader("권한")
+            Text(
+                "꼭 필요한 권한은 '다른 앱 위에 표시' 하나예요. 나머지는 그 기능을 쓸 때 물어보고, 여기서 언제든 바꿀 수 있어요.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 4.dp)
+            )
             permissions.forEach { item ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
