@@ -37,6 +37,15 @@ import com.routinecheck.app.domain.LinkUtils
 import com.routinecheck.app.domain.PinnedItem
 import com.routinecheck.app.ui.common.AppPickerDialog
 import com.routinecheck.app.ui.common.ChatHeadItemIcon
+import com.routinecheck.app.ui.common.AppPermission
+import com.routinecheck.app.ui.common.CoachStep
+import com.routinecheck.app.ui.common.CoachTour
+import com.routinecheck.app.ui.common.coachTarget
+import com.routinecheck.app.ui.common.rememberPermissionRequester
+import androidx.compose.material.icons.rounded.NotificationsActive
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 
 /** 화면 위에 띄우는 대화상자 종류 */
 private sealed interface ItemDialog {
@@ -61,6 +70,33 @@ fun ChatHeadItemsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     var showPicker by remember { mutableStateOf(false) }
     var dialog by remember { mutableStateOf<ItemDialog?>(null) }
+    val context = LocalContext.current
+    val permissionRequester = rememberPermissionRequester()
+    // 알림 배지(알림 접근)는 여기서 사용자가 켜려고 할 때 요청 (v0.6.0)
+    var badgeOn by remember { mutableStateOf(AppPermission.NOTIFICATION_LISTENER.isGranted(context)) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { badgeOn = AppPermission.NOTIFICATION_LISTENER.isGranted(context) }
+
+    CoachTour(
+        id = "chathead_items",
+        enabled = state.loaded,
+        steps = listOf(
+            CoachStep(
+                target = "items.add",
+                title = "항목 추가",
+                body = "챗헤드에 띄울 앱과 웹사이트를 추가하고, 비슷한 것끼리 폴더로 묶을 수 있어요."
+            ),
+            CoachStep(
+                target = "items.badge",
+                title = "알림 배지",
+                body = "켜면 메신저처럼 확인 안 한 알림이 있는 앱에 숫자 배지가 붙어요. 원할 때만 켜면 돼요."
+            ),
+            CoachStep(
+                target = null,
+                title = "순서 바꾸기",
+                body = "각 항목 오른쪽 ⋮ 메뉴에서 위·아래로 옮기거나, 폴더로 옮기거나, 지울 수 있어요."
+            )
+        )
+    )
 
     // 폴더 안에서 뒤로가기 = 한 단계 위로
     BackHandler(enabled = state.path.isNotEmpty()) { viewModel.back() }
@@ -114,10 +150,23 @@ fun ChatHeadItemsScreen(
                     }
                 }
             }
+            if (state.path.isEmpty()) {
+                item(key = "badge") {
+                    BadgePermissionCard(
+                        enabled = badgeOn,
+                        onEnable = {
+                            permissionRequester.request(listOf(AppPermission.NOTIFICATION_LISTENER), userInitiated = true) {
+                                badgeOn = AppPermission.NOTIFICATION_LISTENER in it
+                            }
+                        },
+                        modifier = Modifier.coachTarget("items.badge")
+                    )
+                }
+            }
             item {
                 FlowRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).coachTarget("items.add")
                 ) {
                     FilledTonalButton(onClick = { showPicker = true }) {
                         Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -422,4 +471,29 @@ private fun NameDialog(title: String, initial: String, onDismiss: () -> Unit, on
         confirmButton = { TextButton(onClick = { error = onConfirm(name) }) { Text("저장") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } }
     )
+}
+
+/** 알림 배지(알림 접근) 켜기 카드. 켜져 있으면 한 줄 안내만 */
+@Composable
+private fun BadgePermissionCard(enabled: Boolean, onEnable: () -> Unit, modifier: Modifier = Modifier) {
+    OutlinedCard(modifier = modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Row(Modifier.padding(start = 14.dp, end = 6.dp, top = 10.dp, bottom = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Rounded.NotificationsActive,
+                contentDescription = null,
+                tint = if (enabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text(if (enabled) "알림 배지 켜짐" else "알림 배지", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                Text(
+                    if (enabled) "확인 안 한 알림 수가 챗헤드 항목에 표시돼요"
+                    else "확인 안 한 알림이 있는 앱에 숫자를 붙여 보여줘요 (알림 접근 필요)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            if (!enabled) TextButton(onClick = onEnable) { Text("켜기") }
+        }
+    }
 }

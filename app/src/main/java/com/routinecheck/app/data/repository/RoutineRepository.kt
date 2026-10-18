@@ -102,6 +102,9 @@ class RoutineRepository @Inject constructor(
     fun observeChecklistBetween(from: String, to: String): Flow<List<RoutineChecklistStateEntity>> =
         checklistStateDao.observeBetween(from, to)
 
+    /** 지금까지 확인한 앱 수 */
+    fun observeCheckedCount(): Flow<Int> = checklistStateDao.observeCheckedCount()
+
     /** 체크 상태 저장 (없으면 만들고, 있으면 갱신) */
     suspend fun setChecked(routineId: Long, packageName: String, date: String, checked: Boolean) {
         val now = System.currentTimeMillis()

@@ -26,6 +26,11 @@ import com.routinecheck.app.domain.DayMask
 import com.routinecheck.app.domain.TimeText
 import com.routinecheck.app.system.PermissionUtils
 import com.routinecheck.app.ui.common.AppIcon
+import com.routinecheck.app.ui.common.AppPermission
+import com.routinecheck.app.ui.common.CoachStep
+import com.routinecheck.app.ui.common.CoachTour
+import com.routinecheck.app.ui.common.coachTarget
+import com.routinecheck.app.ui.common.rememberPermissionRequester
 import com.routinecheck.app.ui.common.AppPickerDialog
 import com.routinecheck.app.ui.common.DateInput
 import com.routinecheck.app.ui.common.SectionHeader
@@ -47,6 +52,31 @@ fun RoutineEditScreen(
     val kind = if (state.isSchedule) "일정" else "루틴"
     var showAppPicker by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    val permissionRequester = rememberPermissionRequester()
+
+    // 저장: 입력 확인 → 이 루틴에 필요한 권한만 그때 물어봄 → 허용 여부와 상관없이 저장
+    val onSave: () -> Unit = {
+        if (viewModel.validate()) {
+            val willFire = state.isEnabled && !state.isPastSchedule
+            val needs = buildList {
+                if (willFire && state.notifyEnabled) add(AppPermission.NOTIFICATION)
+                if (willFire && (state.notifyEnabled || state.autoStart)) add(AppPermission.EXACT_ALARM)
+            }
+            permissionRequester.request(
+                needs,
+                reasons = mapOf(
+                    AppPermission.NOTIFICATION to "$kind 시각에 알림을 보내려면 알림 권한이 필요해요. 허용하지 않아도 ${kind}은 저장돼요.",
+                    AppPermission.EXACT_ALARM to "허용하면 $kind 시각에 정확히 알려드려요. 허용하지 않으면 몇 분 늦게 울릴 수 있어요."
+                )
+            ) { viewModel.save() }
+        }
+    }
+
+    CoachTour(
+        id = if (state.isSchedule) "schedule_edit" else "routine_edit",
+        enabled = !state.isLoading,
+        steps = editTourSteps(kind = kind, isSchedule = state.isSchedule)
+    )
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -68,7 +98,7 @@ fun RoutineEditScreen(
                     if (!state.isNew) {
                         IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Rounded.Delete, contentDescription = "삭제") }
                     }
-                    TextButton(onClick = viewModel::save, enabled = !state.isLoading) { Text("저장") }
+                    TextButton(onClick = onSave, enabled = !state.isLoading, modifier = Modifier.coachTarget("edit.save")) { Text("저장") }
                 }
             )
         }
@@ -103,12 +133,12 @@ fun RoutineEditScreen(
                 },
                 minLines = 2,
                 maxLines = 5,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth().coachTarget("edit.message")
             )
 
             if (state.isSchedule) {
                 SectionHeader("날짜")
-                OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                OutlinedCard(modifier = Modifier.fillMaxWidth().coachTarget("edit.when")) {
                     Column(Modifier.padding(16.dp)) {
                         DateInput(date = state.date, onChange = viewModel::setDate, modifier = Modifier.fillMaxWidth())
                         Text(
@@ -124,7 +154,7 @@ fun RoutineEditScreen(
             }
 
             SectionHeader("시작 시각")
-            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+            OutlinedCard(modifier = Modifier.fillMaxWidth().coachTarget("edit.time")) {
                 Column(Modifier.padding(16.dp)) {
                     TimeInput(hour = state.hour, minute = state.minute, onChange = viewModel::setTime)
                     Text(
@@ -146,7 +176,7 @@ fun RoutineEditScreen(
 
             if (!state.isSchedule) {
                 SectionHeader("반복 요일")
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth()) {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().coachTarget("edit.when")) {
                     DayMask.ORDERED.forEach { day ->
                         FilterChip(
                             selected = DayMask.contains(state.daysOfWeek, day),
@@ -166,7 +196,7 @@ fun RoutineEditScreen(
                 }
             }
 
-            SectionHeader("확인할 앱") {
+            SectionHeader("확인할 앱", modifier = Modifier.coachTarget("edit.apps")) {
                 TextButton(onClick = { showAppPicker = true }) {
                     Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(4.dp))
@@ -198,16 +228,12 @@ fun RoutineEditScreen(
                 }
             }
 
-            SectionHeader("알림")
+            SectionHeader("알림", modifier = Modifier.coachTarget("edit.notify"))
             ToggleRow("시작 알림", "$kind 시각에 알림을 보내요. 소리·진동 방식은 설정에서 바꿀 수 있어요", state.notifyEnabled, viewModel::setNotifyEnabled)
             if (state.notifyEnabled && !PermissionUtils.hasNotificationPermission(context)) {
                 TextButton(onClick = {
-                    runCatching {
-                        context.startActivity(
-                            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                        )
-                    }
-                }) { Text("알림 권한이 꺼져 있어요 — 허용하러 가기") }
+                    permissionRequester.request(listOf(AppPermission.NOTIFICATION), userInitiated = true)
+                }) { Text("알림 권한이 꺼져 있어요 — 허용하기") }
             }
             if (state.notifyEnabled) {
                 Text("다시 알림 (스누즈)", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 12.dp))
@@ -267,4 +293,49 @@ private fun ToggleRow(title: String, description: String, checked: Boolean, onCh
         }
         Switch(checked = checked, onCheckedChange = onChange)
     }
+}
+
+/** 루틴/일정 만들기 화면 코치마크 가이드 (처음 열 때). 화면 위에서 아래 순서로 설명 */
+private fun editTourSteps(kind: String, isSchedule: Boolean): List<CoachStep> {
+    val message = CoachStep(
+        target = "edit.message",
+        title = "메시지",
+        body = "$kind 시각이 되면 쓰고 있던 화면 위로 이 메시지를 띄워요. 비워 둬도 괜찮아요."
+    )
+    val time = CoachStep(
+        target = "edit.time",
+        title = "시작 시각",
+        body = "시·분 숫자를 눌러 바로 입력해요. 이 시각에 알림이 오고, 등록한 앱이 챗헤드 맨 앞에 올라와요."
+    )
+    val whenStep = if (isSchedule) {
+        CoachStep(
+            target = "edit.when",
+            title = "날짜",
+            body = "숫자를 눌러 년·월·일을 바로 입력하거나, 오른쪽 달력 버튼으로 골라요. 일정은 이 날짜에 한 번만 실행돼요."
+        )
+    } else {
+        CoachStep(
+            target = "edit.when",
+            title = "반복 요일",
+            body = "루틴을 반복할 요일을 골라요. 아래 '매일 · 평일 · 주말'로 한 번에 고를 수도 있어요."
+        )
+    }
+    val apps = CoachStep(
+        target = "edit.apps",
+        title = "확인할 앱",
+        body = "$kind 시간에 이 앱들이 챗헤드 맨 앞에 올라와요. 챗헤드에서 열면 자동으로 체크되고, 모두 열면 완료예요."
+    )
+    val notify = CoachStep(
+        target = "edit.notify",
+        title = "알림",
+        body = "시작 알림과 다시 알림(스누즈)을 정해요. 알림 권한이 필요하면 저장할 때 물어볼게요."
+    )
+    val save = CoachStep(
+        target = "edit.save",
+        title = "저장",
+        body = "다 정했으면 저장을 눌러요. 저장한 ${kind}은 홈과 루틴 탭에서 볼 수 있어요."
+    )
+    // 일정: 메시지 → 날짜 → 시각 / 루틴: 메시지 → 시각 → 요일 (화면 배치 순서)
+    return if (isSchedule) listOf(message, whenStep, time, apps, notify, save)
+    else listOf(message, time, whenStep, apps, notify, save)
 }

@@ -1,5 +1,8 @@
 package com.routinecheck.app.ui.routine
 
+import com.routinecheck.app.ui.common.CoachStep
+import com.routinecheck.app.ui.common.CoachTour
+import com.routinecheck.app.ui.common.coachTarget
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -58,12 +61,34 @@ fun RoutinesScreen(
 ) {
     val routines by viewModel.routines.collectAsStateWithLifecycle()
 
+    CoachTour(
+        id = "routines",
+        enabled = routines != null,
+        steps = listOf(
+            CoachStep(
+                target = "routines.fab",
+                title = "새 루틴",
+                body = "고른 요일마다 반복할 루틴을 만들어요. 예) 평일 7시 · 캘린더, 날씨, 메신저 확인"
+            ),
+            CoachStep(
+                target = "routines.schedule",
+                title = "일정 추가",
+                body = "날짜와 시각을 정해 한 번만 실행할 일정을 만들어요. 예) 10월 20일 14시 치과 예약"
+            ),
+            CoachStep(
+                target = "routines.list",
+                title = "루틴 목록",
+                body = "다가오는 일정이 위에, 반복 루틴이 아래에 보여요. 누르면 수정하고, 오른쪽 스위치로 잠시 끌 수 있어요."
+            )
+        )
+    )
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = { Text("루틴") },
                 actions = {
-                    TextButton(onClick = onNewSchedule) {
+                    TextButton(onClick = onNewSchedule, modifier = Modifier.coachTarget("routines.schedule")) {
                         Icon(Icons.Rounded.Event, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
                         Text("일정 추가")
@@ -74,6 +99,7 @@ fun RoutinesScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = onNewRoutine,
+                modifier = Modifier.coachTarget("routines.fab"),
                 icon = { Icon(Icons.Rounded.Add, contentDescription = null) },
                 text = { Text("새 루틴") }
             )
@@ -82,7 +108,7 @@ fun RoutinesScreen(
         val list = routines
         when {
             list == null -> Unit
-            list.isEmpty() -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+            list.isEmpty() -> Box(Modifier.fillMaxSize().padding(padding).coachTarget("routines.list"), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("아직 루틴과 일정이 없어요", style = MaterialTheme.typography.titleMedium)
                     Text(
@@ -100,7 +126,7 @@ fun RoutinesScreen(
                     .sortedBy { "${it.routine.date} ${it.routine.startTime}" }
                     .sortedBy { scheduleAt(it)?.isBefore(now) ?: true }
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(padding),
+                    modifier = Modifier.fillMaxSize().padding(padding).coachTarget("routines.list"),
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 96.dp),
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {

@@ -1,7 +1,9 @@
 package com.routinecheck.app.ui.onboarding
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import android.content.Context
+import com.routinecheck.app.data.repository.ChatHeadSettingsRepository
 import com.routinecheck.app.system.PermissionUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -9,6 +11,7 @@ import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 // ─────────────────────────────── PermissionStep
 
@@ -45,12 +48,16 @@ data class OnboardingUiState(
 
 /**
  * 온보딩 화면 상태. 설정 화면 등에서 돌아올 때마다 refresh()로 다시 읽습니다.
- * 필수: 오버레이 / 선택(권장): 알림 · 정확한 알람 · 알림 접근(배지) · 배터리 최적화 제외
- * 루틴 알림은 선택 기능이라 알림·정확한 알람 권한 없이도 시작할 수 있습니다.
+ *
+ * v0.6.0: 첫 실행에서는 챗헤드에 꼭 필요한 "다른 앱 위에 표시" 하나만 요청합니다.
+ * 알림 · 정확한 알람 · 알림 접근 · 배터리 최적화 제외는 그 기능을 쓰려는 순간에 요청해요
+ * (ui/common/PermissionRequest.kt 참고). "나중에 할게요"로 권한 없이 들어갈 수도 있고,
+ * 그때는 챗헤드를 꺼 둔 채 시작하고 홈에서 챗헤드를 켤 때 다시 요청합니다.
  */
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val chatHeadSettingsRepository: ChatHeadSettingsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(OnboardingUiState())
@@ -63,34 +70,18 @@ class OnboardingViewModel @Inject constructor(
             steps = listOf(
                 PermissionStepUiState(
                     PermissionType.OVERLAY, "다른 앱 위에 표시",
-                    "챗헤드를 어느 화면에서든 띄우기 위해 필요해요",
+                    "어느 화면에서든 챗헤드를 띄워 앱을 바로 열 수 있게 해줘요",
                     PermissionUtils.hasOverlayPermission(context)
-                ),
-                PermissionStepUiState(
-                    PermissionType.NOTIFICATION, "알림",
-                    "루틴 시작 알림을 받으려면 허용해 주세요 (선택)",
-                    PermissionUtils.hasNotificationPermission(context),
-                    isRequired = false
-                ),
-                PermissionStepUiState(
-                    PermissionType.EXACT_ALARM, "정확한 알람",
-                    "루틴 시각에 늦지 않게 정각에 알려드려요 (선택)",
-                    PermissionUtils.canScheduleExactAlarms(context),
-                    isRequired = false
-                ),
-                PermissionStepUiState(
-                    PermissionType.NOTIFICATION_LISTENER, "알림 접근",
-                    "메신저 등의 미확인 알림 수를 챗헤드에 배지로 보여줘요",
-                    PermissionUtils.hasNotificationListenerAccess(context),
-                    isRequired = false
-                ),
-                PermissionStepUiState(
-                    PermissionType.BATTERY_OPTIMIZATION, "배터리 사용량 최적화 제외",
-                    "백그라운드에서 챗헤드와 알람이 꺼지지 않게 해줘요",
-                    PermissionUtils.isIgnoringBatteryOptimizations(context),
-                    isRequired = false
                 )
             )
         )
+    }
+
+    /** 권한 없이 시작: 챗헤드를 꺼 둔 상태로 들어감 */
+    fun skip(onDone: () -> Unit) {
+        viewModelScope.launch {
+            chatHeadSettingsRepository.setEnabled(false)
+            onDone()
+        }
     }
 }

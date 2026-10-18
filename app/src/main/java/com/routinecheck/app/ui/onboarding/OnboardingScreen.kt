@@ -22,7 +22,8 @@ import com.routinecheck.app.ui.common.ChatHeadPreview
 fun OnboardingScreen(
     uiState: OnboardingUiState,
     onRequestPermission: (PermissionType) -> Unit,
-    onFinish: () -> Unit
+    onFinish: () -> Unit,
+    onSkip: () -> Unit
 ) {
     Surface(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -41,7 +42,8 @@ fun OnboardingScreen(
                 Spacer(Modifier.height(16.dp))
                 Text("챗헤드 하나로 주요 앱을 바로", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text(
-                    "어느 화면에서든 챗헤드를 눌러 앱을 열고, 루틴 시간엔 확인할 앱을 먼저 보여드려요.\n시작하려면 아래 권한이 필요해요.",
+                    "어느 화면에서든 챗헤드를 눌러 앱을 열고, 루틴 시간엔 확인할 앱을 먼저 보여드려요.\n" +
+                        "시작할 때는 아래 권한 하나만 있으면 돼요. 알림 같은 다른 권한은 그 기능을 쓸 때 물어볼게요.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 6.dp)
@@ -63,13 +65,10 @@ fun OnboardingScreen(
             ) {
                 Text(if (uiState.requiredGranted) "시작하기" else "필수 권한 허용하기")
             }
-            if (uiState.requiredGranted && !uiState.allGranted) {
-                Text(
-                    "권장 항목은 나중에 설정에서 켤 수 있어요",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
+            if (!uiState.requiredGranted) {
+                TextButton(onClick = onSkip, modifier = Modifier.padding(top = 4.dp)) {
+                    Text("나중에 할게요 (챗헤드 없이 시작)")
+                }
             }
         }
     }
