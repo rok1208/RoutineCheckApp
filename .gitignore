@@ -10,3 +10,8 @@
 local.properties
 /app/build
 /app/schemas
+
+# 릴리스 서명 키 (절대 커밋 금지)
+keystore.properties
+*.jks
+*.keystore

@@ -5,8 +5,6 @@
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <!-- Android 13+ 알림 표시 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- 배터리 최적화 예외 요청 -->
-    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <!-- 재부팅 후 알람 재등록 / 챗헤드 다시 띄우기 -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- 루틴 정각 알람 (Android 12+) -->

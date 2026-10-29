@@ -52,6 +52,8 @@ fun SettingsScreen(
     onManageChatHeadItems: () -> Unit,
     /** v0.6.0: 모든 화면의 코치마크 가이드를 처음부터 다시 보기 */
     onReplayGuide: () -> Unit,
+    /** v0.7.0: 오픈소스 라이선스 고지 화면 */
+    onOpenLicenses: () -> Unit,
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val permissionRequester = rememberPermissionRequester()
@@ -240,6 +242,18 @@ fun SettingsScreen(
                     }
                     Text(if (item.granted) "허용됨" else "설정", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
                 }
+            }
+
+            SectionHeader("앱 정보")
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onOpenLicenses)
+                    .padding(vertical = 8.dp)
+            ) {
+                Text("오픈소스 라이선스", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null)
             }
 
             Text(
