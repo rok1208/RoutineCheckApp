@@ -563,11 +563,11 @@ private fun ChatHeadCard(
                         Spacer(Modifier.width(4.dp))
                         Text("항목 관리")
                     }
-                    FilledTonalButton(onClick = onOpenSettings) {
-                        Icon(Icons.Rounded.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
-                        Text("챗헤드 설정")
-                    }
+//                    FilledTonalButton(onClick = onOpenSettings) {
+//                        Icon(Icons.Rounded.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
+//                        Spacer(Modifier.width(4.dp))
+//                        Text("챗헤드 설정")
+//                    }
                 }
             }
         }

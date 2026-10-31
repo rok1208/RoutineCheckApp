@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -7,19 +9,43 @@ plugins {
 
 android {
     namespace = "com.routinecheck.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.routinecheck.app"
+        // 플레이스토어 고유 ID (한 번 올리면 바꿀 수 없음). 코드 패키지(namespace)는 그대로 둠
+        applicationId = "io.github.rok1208.routinecheck"
         minSdk = 26          // Android 8.0+ (오버레이 TYPE_APPLICATION_OVERLAY, 알림 채널 기준)
-        targetSdk = 35
-        versionCode = 8
-        versionName = "0.6.0"
+        targetSdk = 36          // 2026-08-31부터 플레이 신규 앱·업데이트 필수
+        versionCode = 9
+        versionName = "0.7.0"
+    }
+
+    // 릴리스 서명: 프로젝트 루트의 keystore.properties (git 제외) 가 있을 때만 사용
+    //   storeFile=../release.jks  storePassword=...  keyAlias=...  keyPassword=...
+    val keystoreFile = rootProject.file("keystore.properties")
+    val hasReleaseKey = keystoreFile.exists()
+    signingConfigs {
+        if (hasReleaseKey) {
+            val props = Properties().apply { keystoreFile.inputStream().use { load(it) } }
+            create("release") {
+                storeFile = rootProject.file(props.getProperty("storeFile"))
+                storePassword = props.getProperty("storePassword")
+                keyAlias = props.getProperty("keyAlias")
+                keyPassword = props.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // R8: 코드 축소·난독화 + 안 쓰는 리소스 제거 (APK 크기 감소, 플레이 권장)
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            if (hasReleaseKey) signingConfig = signingConfigs.getByName("release")
         }
     }
 

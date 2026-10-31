@@ -46,7 +46,7 @@ enum class AppPermission(val title: String, val defaultReason: String) {
     ),
     BATTERY(
         "배터리 사용량 최적화 제외",
-        "휴대폰이 절전을 위해 챗헤드와 루틴 알람을 꺼 버리지 않도록 최적화에서 제외해 주세요."
+        "휴대폰이 절전을 위해 챗헤드와 루틴 알람을 꺼 버리지 않도록, 다음 화면의 목록에서 '루틴 체크'를 찾아 '최적화 안 함'으로 바꿔 주세요."
     );
 
     fun isGranted(context: Context): Boolean = when (this) {

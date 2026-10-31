@@ -89,7 +89,7 @@ class SettingsViewModel @Inject constructor(
             PermissionUtils.hasNotificationListenerAccess(context), PermissionUtils.notificationListenerIntent(context)
         ),
         PermissionItem(
-            "배터리 최적화 제외", "백그라운드에서 챗헤드가 꺼지지 않게 해요", false,
+            "배터리 최적화 제외", "목록에서 '루틴 체크'를 '최적화 안 함'으로 바꾸면 챗헤드가 꺼지지 않아요", false,
             PermissionUtils.isIgnoringBatteryOptimizations(context), PermissionUtils.batteryOptimizationIntent(context)
         )
     ).map { it.copy(intent = it.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }

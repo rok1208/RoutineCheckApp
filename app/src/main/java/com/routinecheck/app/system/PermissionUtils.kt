@@ -50,8 +50,14 @@ object PermissionUtils {
     fun isIgnoringBatteryOptimizations(context: Context): Boolean =
         context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(context.packageName)
 
+    /**
+     * 배터리 최적화 목록 화면을 연다 (v0.7.0).
+     * 앱이 직접 예외를 요청하는 ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS 는
+     * 플레이 정책상 허용 대상(메신저·기기 연동 등)이 아니면 거부될 수 있어 쓰지 않음.
+     * 사용자가 목록에서 "루틴 체크"를 찾아 직접 "최적화 안 함"으로 바꿈.
+     */
     fun batteryOptimizationIntent(context: Context): Intent =
-        Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, Uri.parse("package:${context.packageName}"))
+        Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
 
     /** 알림 접근 (NotificationListenerService — 챗헤드 미확인 알림 배지) */
     fun hasNotificationListenerAccess(context: Context): Boolean =

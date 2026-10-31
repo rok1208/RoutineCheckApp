@@ -35,6 +35,7 @@ import com.routinecheck.app.ui.home.HomeScreen
 import com.routinecheck.app.ui.memo.MemosScreen
 import com.routinecheck.app.ui.routine.RoutineEditScreen
 import com.routinecheck.app.ui.routine.RoutinesScreen
+import com.routinecheck.app.ui.settings.LicensesScreen
 import com.routinecheck.app.ui.settings.SettingsScreen
 import com.routinecheck.app.ui.stats.StatsScreen
 import java.time.LocalDate
@@ -46,6 +47,7 @@ object Routes {
     const val CHATHEAD_ITEMS = "chathead_items"
     const val SETTINGS = "settings"
     const val MEMOS = "memos"
+    const val LICENSES = "licenses"
     /** 루틴/일정 만들기·수정. date 가 있으면 그 날짜의 새 일정 (v0.5.0) */
     const val ROUTINE_EDIT = "routine_edit?routineId={routineId}&date={date}"
 
@@ -161,8 +163,12 @@ fun AppRoot(pendingRoute: String?, onRouteConsumed: () -> Unit) {
                         if (!navController.popBackStack(Routes.HOME, inclusive = false)) {
                             navController.navigateTab(Routes.HOME)
                         }
-                    }
+                    },
+                    onOpenLicenses = { navController.navigate(Routes.LICENSES) }
                 )
+            }
+            composable(Routes.LICENSES) {
+                LicensesScreen(onBack = { navController.popBackStack() })
             }
         }
     }

@@ -1,4 +1,4 @@
-# 루틴 체크 어플 (v0.6.0)
+# 루틴 체크 어플 (v0.7.0)
 
 안드로이드의 앱 접근 방식이 비효율적이라는 문제의식에서 시작한 앱입니다.
 **화면 위 챗헤드 하나로 주요 앱·웹사이트를 바로 열고 확인**하는 것이 핵심이고,
@@ -23,7 +23,7 @@
 | 전체 메모 | 작성한 모든 메모를 월별로 보기 · 검색 · 바로 고치기 · 삭제 · 홈에서 그 날짜 열기 |
 | 통계 (v0.6.0) | 설치일부터 계산. 등급(5단계, 누르면 등급표) · 오늘의 한마디, 연속 기록, 오늘·시작 이후·완벽한 날, 주간 달성도(‹ › 로 지난 주), 배지 8종, 루틴별 연속 기록 |
 | 가이드 (v0.6.0) | 홈 · 루틴 · 만들기 · 챗헤드 항목 · 통계 화면을 처음 열 때 버튼을 하나씩 강조하는 코치마크, 설정에서 "가이드 다시 보기" |
-| 권한 (v0.6.0) | 첫 실행엔 "다른 앱 위에 표시"만. 알림·정확한 알람은 루틴 저장 때, 배터리 최적화는 챗헤드를 켤 때, 알림 접근은 배지를 켤 때 요청 |
+| 권한 (v0.6.0) | 첫 실행엔 "다른 앱 위에 표시"만. 알림·정확한 알람은 루틴 저장 때, 배터리 최적화는 챗헤드를 켤 때(v0.7.0부터 설정 목록 화면으로 안내), 알림 접근은 배지를 켤 때 요청 |
 
 ## 화면 (v0.6.0, 에뮬레이터 캡처)
 
@@ -85,6 +85,21 @@ app/src/main/java/com/routinecheck/app/
 ## 실행
 
 1. Android Studio로 이 폴더(`settings.gradle.kts`가 있는 폴더)를 열고 Gradle Sync
-2. `app` 실행 (minSdk 26 / targetSdk 35)
+2. `app` 실행 (minSdk 26 / targetSdk 36, AGP 8.10.1 · Gradle 8.11.1 · JDK 17 이상)
 3. 온보딩에서 "다른 앱 위에 표시" 허용 (또는 "나중에") → 홈 가이드를 따라 챗헤드 켜기
 4. 단위 테스트: `app/src/test/.../RoutineLogicTest.kt` 우클릭 → Run (16개)
+
+## 릴리스 빌드 (v0.7.0, 플레이스토어용)
+
+- 앱 ID: `io.github.rok1208.routinecheck` (코드 패키지 `com.routinecheck.app`은 그대로). 기존 `com.routinecheck.app`으로 설치된 앱과는 별개 앱으로 설치됨
+- 서명: 프로젝트 루트에 `keystore.properties`(git 제외)를 만들면 release 빌드에 자동 적용
+  ```
+  storeFile=../release.jks
+  storePassword=****
+  keyAlias=routinecheck
+  keyPassword=****
+  ```
+  키 파일(`*.jks`)과 비밀번호는 잃어버리면 업데이트를 못 하니 별도 백업 (플레이 앱 서명 사용 시 이 키는 업로드 키)
+- 번들: Build → Generate Signed App Bundle → `app-release.aab`
+- R8 축소 · 리소스 축소 켜짐. 릴리스 빌드로 전 기능 한 번 확인, `app/build/outputs/mapping/release/mapping.txt`는 플레이 콘솔에 업로드
+- 오픈소스 고지: 설정 → 앱 정보 → 오픈소스 라이선스
