@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 11 이하 백업 범위 (data_extraction_rules.xml 과 같은 내용) -->
+<full-backup-content>
+    <include domain="database" path="." />
+    <include domain="sharedpref" path="." />
+    <include domain="file" path="chathead_icon.png" />
+</full-backup-content>

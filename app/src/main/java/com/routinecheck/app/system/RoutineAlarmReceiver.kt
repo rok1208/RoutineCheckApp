@@ -124,6 +124,19 @@ class RoutineAlarmReceiver : BroadcastReceiver() {
             .setAutoCancel(true)
             .setContentIntent(openApp)
             .addAction(0, "챗헤드 열기", openChatHead)
+            // v0.7.1: 잠금 화면에는 루틴 이름·메시지를 숨기고 시각만 표시 (잠금 해제하면 전체 내용)
+            .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+            .setPublicVersion(
+                NotificationCompat.Builder(context, channelId)
+                    .setSmallIcon(R.drawable.ic_notification)
+                    .setContentTitle(
+                        (if (routine.isSchedule) "📅 일정 시간이에요" else "⏰ 루틴 시간이에요") +
+                            " (${TimeText.display(routine.startTime)})"
+                    )
+                    .setContentText("잠금을 해제하면 내용을 볼 수 있어요")
+                    .setCategory(NotificationCompat.CATEGORY_REMINDER)
+                    .build()
+            )
 
         routine.snoozeMinutes?.let { minutes ->
             val snooze = PendingIntent.getBroadcast(

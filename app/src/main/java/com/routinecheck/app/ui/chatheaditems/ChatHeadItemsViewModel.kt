@@ -107,18 +107,22 @@ class ChatHeadItemsViewModel @Inject constructor(
 
     /** @return 오류 문구. null이면 성공 */
     fun addLink(title: String, url: String): String? {
-        val normalized = LinkUtils.normalize(url) ?: return "주소를 확인해 주세요 (예: naver.com)"
+        val normalized = LinkUtils.normalize(url) ?: return linkError(url)
         val name = title.trim().ifEmpty { LinkUtils.defaultTitle(normalized) }
         viewModelScope.launch { repository.addLink(state.value.currentFolderId, name.take(30), normalized) }
         return null
     }
 
     fun editLink(itemId: Long, title: String, url: String): String? {
-        val normalized = LinkUtils.normalize(url) ?: return "주소를 확인해 주세요 (예: naver.com)"
+        val normalized = LinkUtils.normalize(url) ?: return linkError(url)
         val name = title.trim().ifEmpty { LinkUtils.defaultTitle(normalized) }
         viewModelScope.launch { repository.edit(itemId, name.take(30), normalized) }
         return null
     }
+
+    private fun linkError(url: String): String =
+        if (LinkUtils.hasUnsupportedScheme(url)) "http 또는 https 웹 주소만 등록할 수 있어요"
+        else "주소를 확인해 주세요 (예: naver.com)"
 
     fun createFolder(name: String): String? {
         val trimmed = name.trim()

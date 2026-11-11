@@ -1,5 +1,6 @@
 package com.routinecheck.app.ui.message
 
+import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -51,6 +52,27 @@ class RoutineMessageActivity : ComponentActivity() {
     private val queue = mutableStateListOf<RoutineMessage>()
     private var expandAfterClose = false
 
+    /** v0.7.1: 보안 잠금(PIN·패턴·지문 등)이 걸린 채 잠겨 있으면 이름·메시지를 숨김 */
+    private var locked by mutableStateOf(false)
+    private val keyguard by lazy { getSystemService(KeyguardManager::class.java) }
+
+    private fun isSecurelyLocked(): Boolean =
+        keyguard?.let { it.isKeyguardLocked && it.isDeviceSecure } ?: false
+
+    private fun requestUnlock() {
+        val km = keyguard ?: return
+        km.requestDismissKeyguard(this, object : KeyguardManager.KeyguardDismissCallback() {
+            override fun onDismissSucceeded() {
+                locked = isSecurelyLocked()
+            }
+        })
+    }
+
+    override fun onResume() {
+        super.onResume()
+        locked = isSecurelyLocked()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         showOverLockScreen()
@@ -66,6 +88,8 @@ class RoutineMessageActivity : ComponentActivity() {
                     MessageDialog(
                         message = current,
                         remaining = queue.size - 1,
+                        locked = locked,
+                        onUnlock = ::requestUnlock,
                         onConfirm = ::next,
                         onOpenApp = {
                             startActivity(Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
@@ -144,6 +168,8 @@ class RoutineMessageActivity : ComponentActivity() {
 private fun MessageDialog(
     message: RoutineMessage,
     remaining: Int,
+    locked: Boolean,
+    onUnlock: () -> Unit,
     onConfirm: () -> Unit,
     onOpenApp: () -> Unit
 ) {
@@ -177,41 +203,58 @@ private fun MessageDialog(
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
-                Text(
-                    message.name,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-                Surface(
-                    color = MaterialTheme.colorScheme.secondaryContainer,
-                    shape = RoundedCornerShape(16.dp),
-                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
-                ) {
+                if (locked) {
+                    // 잠금 화면: 옆 사람이 볼 수 있으니 이름·메시지는 잠금 해제 뒤에 표시
                     Text(
-                        message.message,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer,
-                        modifier = Modifier
-                            .heightIn(max = 280.dp)
-                            .verticalScroll(rememberScrollState())
-                            .padding(16.dp)
+                        "잠금을 해제하면 내용을 볼 수 있어요",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 8.dp)
                     )
-                }
-                if (remaining > 0) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                        modifier = Modifier.fillMaxWidth().padding(top = 20.dp)
+                    ) {
+                        TextButton(onClick = onConfirm) { Text("닫기") }
+                        Button(onClick = onUnlock) { Text("잠금 해제") }
+                    }
+                } else {
                     Text(
-                        "메시지 ${remaining}개가 더 있어요",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 10.dp)
+                        message.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 8.dp)
                     )
-                }
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                    modifier = Modifier.fillMaxWidth().padding(top = 20.dp)
-                ) {
-                    TextButton(onClick = onOpenApp) { Text("앱 열기") }
-                    Button(onClick = onConfirm) { Text(if (remaining > 0) "다음" else "확인") }
+                    Surface(
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
+                    ) {
+                        Text(
+                            message.message,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer,
+                            modifier = Modifier
+                                .heightIn(max = 280.dp)
+                                .verticalScroll(rememberScrollState())
+                                .padding(16.dp)
+                        )
+                    }
+                    if (remaining > 0) {
+                        Text(
+                            "메시지 ${remaining}개가 더 있어요",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 10.dp)
+                        )
+                    }
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                        modifier = Modifier.fillMaxWidth().padding(top = 20.dp)
+                    ) {
+                        TextButton(onClick = onOpenApp) { Text("앱 열기") }
+                        Button(onClick = onConfirm) { Text(if (remaining > 0) "다음" else "확인") }
+                    }
                 }
             }
         }
