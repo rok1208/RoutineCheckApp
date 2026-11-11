@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.routinecheck.app.domain.tr
 
 /** 옮기기 대화상자의 목적지 한 줄 */
 data class FolderDestination(val id: Long?, val label: String, val depth: Int)
@@ -47,7 +48,7 @@ data class ChatHeadItemsUiState(
             ChatHeadOrdering.descendants(all, item.id).map { it.id }.toSet() + item.id
         else emptySet()
         val result = mutableListOf<FolderDestination>()
-        if (item.parentId != null) result += FolderDestination(null, "최상단", 0)
+        if (item.parentId != null) result += FolderDestination(null, tr("최상단"), 0)
         fun walk(parent: Long?, depth: Int) {
             all.filter { it.parentId == parent && it.kind == ChatHeadKind.FOLDER }.sortedBy { it.sortOrder }.forEach { f ->
                 if (f.id in blocked) return@forEach
@@ -107,29 +108,33 @@ class ChatHeadItemsViewModel @Inject constructor(
 
     /** @return 오류 문구. null이면 성공 */
     fun addLink(title: String, url: String): String? {
-        val normalized = LinkUtils.normalize(url) ?: return "주소를 확인해 주세요 (예: naver.com)"
+        val normalized = LinkUtils.normalize(url) ?: return linkError(url)
         val name = title.trim().ifEmpty { LinkUtils.defaultTitle(normalized) }
         viewModelScope.launch { repository.addLink(state.value.currentFolderId, name.take(30), normalized) }
         return null
     }
 
     fun editLink(itemId: Long, title: String, url: String): String? {
-        val normalized = LinkUtils.normalize(url) ?: return "주소를 확인해 주세요 (예: naver.com)"
+        val normalized = LinkUtils.normalize(url) ?: return linkError(url)
         val name = title.trim().ifEmpty { LinkUtils.defaultTitle(normalized) }
         viewModelScope.launch { repository.edit(itemId, name.take(30), normalized) }
         return null
     }
 
+    private fun linkError(url: String): String =
+        if (LinkUtils.hasUnsupportedScheme(url)) tr("http 또는 https 웹 주소만 등록할 수 있어요")
+        else tr("주소를 확인해 주세요 (예: naver.com)")
+
     fun createFolder(name: String): String? {
         val trimmed = name.trim()
-        if (trimmed.isEmpty()) return "폴더 이름을 입력해 주세요"
+        if (trimmed.isEmpty()) return tr("폴더 이름을 입력해 주세요")
         viewModelScope.launch { repository.createFolder(state.value.currentFolderId, trimmed.take(20)) }
         return null
     }
 
     fun renameFolder(itemId: Long, name: String): String? {
         val trimmed = name.trim()
-        if (trimmed.isEmpty()) return "폴더 이름을 입력해 주세요"
+        if (trimmed.isEmpty()) return tr("폴더 이름을 입력해 주세요")
         viewModelScope.launch { repository.edit(itemId, trimmed.take(20)) }
         return null
     }

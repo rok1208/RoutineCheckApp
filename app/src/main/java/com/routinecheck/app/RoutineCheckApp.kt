@@ -1,7 +1,9 @@
 package com.routinecheck.app
 
 import android.app.Application
+import android.content.Context
 import com.routinecheck.app.data.repository.RoutineRepository
+import com.routinecheck.app.system.LanguageSettings
 import com.routinecheck.app.system.NotificationChannels
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
@@ -21,6 +23,12 @@ class RoutineCheckApp : Application() {
     @Inject lateinit var routineRepository: RoutineRepository
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base)
+        // v0.8.0: 어떤 화면·서비스·알림보다 먼저 앱 언어를 정함
+        LanguageSettings.applySaved(base)
+    }
 
     override fun onCreate() {
         super.onCreate()

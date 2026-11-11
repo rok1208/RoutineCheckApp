@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
 import android.content.SharedPreferences
 import kotlinx.coroutines.delay
+import com.routinecheck.app.domain.tr
 
 /**
  * 실제 화면 코치마크 가이드 (v0.6.0).
@@ -304,11 +305,11 @@ private fun CoachBubble(
                 }
             }
             Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
-                if (position < total) TextButton(onClick = onSkip) { Text("건너뛰기") }
+                if (position < total) TextButton(onClick = onSkip) { Text(tr("건너뛰기")) }
                 Spacer(Modifier.weight(1f))
-                if (position > 1) TextButton(onClick = onPrev) { Text("이전") }
+                if (position > 1) TextButton(onClick = onPrev) { Text(tr("이전")) }
                 Button(onClick = onNext, modifier = Modifier.padding(start = 4.dp)) {
-                    Text(if (position < total) "다음" else "알겠어요")
+                    Text(if (position < total) tr("다음") else tr("알겠어요"))
                 }
             }
         }

@@ -37,6 +37,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import com.routinecheck.app.domain.tr
 
 @HiltViewModel
 class RoutinesViewModel @Inject constructor(
@@ -67,18 +68,18 @@ fun RoutinesScreen(
         steps = listOf(
             CoachStep(
                 target = "routines.fab",
-                title = "새 루틴",
-                body = "고른 요일마다 반복할 루틴을 만들어요. 예) 평일 7시 · 캘린더, 날씨, 메신저 확인"
+                title = tr("새 루틴"),
+                body = tr("고른 요일마다 반복할 루틴을 만들어요. 예) 평일 7시 · 캘린더, 날씨, 메신저 확인")
             ),
             CoachStep(
                 target = "routines.schedule",
-                title = "일정 추가",
-                body = "날짜와 시각을 정해 한 번만 실행할 일정을 만들어요. 예) 10월 20일 14시 치과 예약"
+                title = tr("일정 추가"),
+                body = tr("날짜와 시각을 정해 한 번만 실행할 일정을 만들어요. 예) 10월 20일 14시 치과 예약")
             ),
             CoachStep(
                 target = "routines.list",
-                title = "루틴 목록",
-                body = "다가오는 일정이 위에, 반복 루틴이 아래에 보여요. 누르면 수정하고, 오른쪽 스위치로 잠시 끌 수 있어요."
+                title = tr("루틴 목록"),
+                body = tr("다가오는 일정이 위에, 반복 루틴이 아래에 보여요. 누르면 수정하고, 오른쪽 스위치로 잠시 끌 수 있어요.")
             )
         )
     )
@@ -86,12 +87,12 @@ fun RoutinesScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("루틴") },
+                title = { Text(tr("루틴")) },
                 actions = {
                     TextButton(onClick = onNewSchedule, modifier = Modifier.coachTarget("routines.schedule")) {
                         Icon(Icons.Rounded.Event, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("일정 추가")
+                        Text(tr("일정 추가"))
                     }
                 }
             )
@@ -101,7 +102,7 @@ fun RoutinesScreen(
                 onClick = onNewRoutine,
                 modifier = Modifier.coachTarget("routines.fab"),
                 icon = { Icon(Icons.Rounded.Add, contentDescription = null) },
-                text = { Text("새 루틴") }
+                text = { Text(tr("새 루틴")) }
             )
         }
     ) { padding ->
@@ -110,9 +111,9 @@ fun RoutinesScreen(
             list == null -> Unit
             list.isEmpty() -> Box(Modifier.fillMaxSize().padding(padding).coachTarget("routines.list"), contentAlignment = Alignment.Center) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("아직 루틴과 일정이 없어요", style = MaterialTheme.typography.titleMedium)
+                    Text(tr("아직 루틴과 일정이 없어요"), style = MaterialTheme.typography.titleMedium)
                     Text(
-                        "예) 기상 루틴: 7시 · 캘린더, 날씨, 메신저 확인",
+                        tr("예) 기상 루틴: 7시 · 캘린더, 날씨, 메신저 확인"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -131,7 +132,7 @@ fun RoutinesScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     if (sortedSchedules.isNotEmpty()) {
-                        item(key = "label-schedules") { GroupLabel("일정") }
+                        item(key = "label-schedules") { GroupLabel(tr("일정")) }
                         items(sortedSchedules, key = { it.routine.routineId }) { item ->
                             RoutineCard(
                                 item = item,
@@ -142,7 +143,7 @@ fun RoutinesScreen(
                         }
                     }
                     if (repeating.isNotEmpty()) {
-                        if (sortedSchedules.isNotEmpty()) item(key = "label-routines") { GroupLabel("반복 루틴") }
+                        if (sortedSchedules.isNotEmpty()) item(key = "label-routines") { GroupLabel(tr("반복 루틴")) }
                         items(repeating, key = { it.routine.routineId }) { item ->
                             RoutineCard(
                                 item = item,
@@ -192,12 +193,12 @@ private fun RoutineCard(item: RoutineWithApps, isPast: Boolean, onClick: () -> U
                         buildString {
                             if (isSchedule) {
                                 append("📅 ").append(scheduleDateLabel(routine.date))
-                                if (isPast) append(" · 지난 일정")
+                                if (isPast) append(tr(" · 지난 일정"))
                             } else {
                                 append(DayMask.label(routine.daysOfWeek))
                             }
-                            append(if (routine.notifyEnabled) " · 🔔 알림" else " · 🔕 알림 끔")
-                            if (routine.autoStart) append(" · 챗헤드 자동 펼침")
+                            append(if (routine.notifyEnabled) tr(" · 🔔 알림") else tr(" · 🔕 알림 끔"))
+                            if (routine.autoStart) append(tr(" · 챗헤드 자동 펼침"))
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -230,5 +231,5 @@ private fun RoutineCard(item: RoutineWithApps, isPast: Boolean, onClick: () -> U
 /** "2026년 10월 15일 (목)" */
 private fun scheduleDateLabel(date: String?): String {
     val d = date?.let { runCatching { DateKey.parse(it) }.getOrNull() } ?: return date.orEmpty()
-    return "${d.year}년 ${d.monthValue}월 ${d.dayOfMonth}일 (${DayMask.shortName(d.dayOfWeek)})"
+    return tr("{0}년 {1}월 {2}일 ({3})", d.year, d.monthValue, d.dayOfMonth, DayMask.shortName(d.dayOfWeek))
 }

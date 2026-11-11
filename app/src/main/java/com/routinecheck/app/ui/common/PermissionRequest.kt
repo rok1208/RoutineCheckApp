@@ -12,6 +12,7 @@ import android.content.Intent
 import android.os.Build
 import android.provider.Settings
 import com.routinecheck.app.system.PermissionUtils
+import com.routinecheck.app.domain.tr
 
 /**
  * 권한은 "그 기능을 쓰려는 순간"에 요청합니다 (v0.6.0).
@@ -29,24 +30,24 @@ import com.routinecheck.app.system.PermissionUtils
  */
 enum class AppPermission(val title: String, val defaultReason: String) {
     OVERLAY(
-        "다른 앱 위에 표시",
-        "챗헤드를 어느 화면에서든 띄우려면 이 권한이 필요해요. 설정에서 '루틴 체크'를 찾아 허용해 주세요."
+        tr("다른 앱 위에 표시"),
+        tr("챗헤드를 어느 화면에서든 띄우려면 이 권한이 필요해요. 설정에서 '루틴 체크'를 찾아 허용해 주세요.")
     ),
     NOTIFICATION(
-        "알림",
-        "루틴 시각에 알림을 보내려면 알림 권한이 필요해요."
+        tr("알림"),
+        tr("루틴 시각에 알림을 보내려면 알림 권한이 필요해요.")
     ),
     EXACT_ALARM(
-        "정확한 알람",
-        "허용하면 루틴 시각에 늦지 않고 정각에 알려드려요. 허용하지 않으면 몇 분 늦게 울릴 수 있어요."
+        tr("정확한 알람"),
+        tr("허용하면 루틴 시각에 늦지 않고 정각에 알려드려요. 허용하지 않으면 몇 분 늦게 울릴 수 있어요.")
     ),
     NOTIFICATION_LISTENER(
-        "알림 접근",
-        "메신저 등 앱의 미확인 알림 수를 챗헤드에 배지로 보여주려면 알림 접근이 필요해요. 알림 내용은 저장하거나 밖으로 보내지 않아요."
+        tr("알림 접근"),
+        tr("메신저 등 앱의 미확인 알림 수를 챗헤드에 배지로 보여주려면 알림 접근이 필요해요. 알림 내용은 저장하거나 밖으로 보내지 않아요.")
     ),
     BATTERY(
-        "배터리 사용량 최적화 제외",
-        "휴대폰이 절전을 위해 챗헤드와 루틴 알람을 꺼 버리지 않도록, 다음 화면의 목록에서 '루틴 체크'를 찾아 '최적화 안 함'으로 바꿔 주세요."
+        tr("배터리 사용량 최적화 제외"),
+        tr("휴대폰이 절전을 위해 챗헤드와 루틴 알람을 꺼 버리지 않도록, 다음 화면의 목록에서 '루틴 체크'를 찾아 '최적화 안 함'으로 바꿔 주세요.")
     );
 
     fun isGranted(context: Context): Boolean = when (this) {
@@ -156,7 +157,7 @@ fun rememberPermissionRequester(): PermissionRequester {
     if (req != null && current != null) {
         AlertDialog(
             onDismissRequest = requester::decline,
-            title = { Text("${current.title} 권한이 필요해요") },
+            title = { Text(tr("{0} 권한이 필요해요", current.title)) },
             text = { Text(req.reasons[current] ?: current.defaultReason) },
             confirmButton = {
                 TextButton(onClick = {
@@ -173,9 +174,9 @@ fun rememberPermissionRequester(): PermissionRequester {
                                     .onFailure { requester.proceed() }
                             }
                     }
-                }) { Text("허용하러 가기") }
+                }) { Text(tr("허용하러 가기")) }
             },
-            dismissButton = { TextButton(onClick = requester::decline) { Text("나중에") } }
+            dismissButton = { TextButton(onClick = requester::decline) { Text(tr("나중에")) } }
         )
     }
     return requester

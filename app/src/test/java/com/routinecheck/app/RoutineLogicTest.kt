@@ -196,4 +196,21 @@ class RoutineLogicTest {
         assertEquals("m.naver.com", LinkUtils.hostOf("https://m.naver.com/news?x=1"))
         assertEquals("naver.com", LinkUtils.defaultTitle("https://www.naver.com/"))
     }
+
+    @Test
+    fun link_onlyWebSchemesAllowed() {
+        // v0.7.1: http·https 만 허용
+        assertEquals("HTTPS://a.com", LinkUtils.normalize("HTTPS://a.com"))
+        assertNull(LinkUtils.normalize("file://a.b/x"))
+        assertNull(LinkUtils.normalize("intent://a.com#Intent;end"))
+        assertNull(LinkUtils.normalize("content://a.b/c"))
+        assertNull(LinkUtils.normalize("javascript:alert(1)"))
+        // 아이디가 섞인 주소(실제 접속 주소를 헷갈리게 함) 거부
+        assertNull(LinkUtils.normalize("https://naver.com@evil.com"))
+        assertNull(LinkUtils.normalize("mailto:a@b.com"))
+        assertTrue(LinkUtils.hasUnsupportedScheme("file://a.b/x"))
+        assertFalse(LinkUtils.hasUnsupportedScheme("naver.com"))
+        assertFalse(LinkUtils.isWebUrl("file://a.b/x"))
+        assertTrue(LinkUtils.isWebUrl("http://a.com"))
+    }
 }

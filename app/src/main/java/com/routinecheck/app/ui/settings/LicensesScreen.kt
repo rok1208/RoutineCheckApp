@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.routinecheck.app.R
+import com.routinecheck.app.domain.tr
 
 /** 앱에 포함된 오픈소스 라이브러리 (모두 Apache License 2.0) */
 private data class OssLibrary(val name: String, val owner: String, val url: String)
@@ -45,7 +46,11 @@ private val LIBRARIES = listOf(
     OssLibrary("Dagger · Hilt", "The Dagger Authors", "https://dagger.dev/hilt"),
     OssLibrary("AndroidX Hilt Navigation Compose", "The Android Open Source Project", "https://developer.android.com/jetpack/androidx/releases/hilt"),
     OssLibrary("Kotlin Standard Library", "JetBrains s.r.o. and Kotlin Programming Language contributors", "https://kotlinlang.org"),
-    OssLibrary("kotlinx.coroutines", "JetBrains s.r.o.", "https://github.com/Kotlin/kotlinx.coroutines")
+    OssLibrary("kotlinx.coroutines", "JetBrains s.r.o.", "https://github.com/Kotlin/kotlinx.coroutines"),
+    // v0.7.1: Hilt · Kotlin 이 함께 가져오는 라이브러리
+    OssLibrary("javax.inject (JSR-330)", "The JSR-330 Expert Group", "https://github.com/javax-inject/javax-inject"),
+    OssLibrary("Guava ListenableFuture", "The Guava Authors", "https://github.com/google/guava"),
+    OssLibrary("JetBrains Java Annotations", "JetBrains s.r.o.", "https://github.com/JetBrains/java-annotations")
 )
 
 /** 설정 → 오픈소스 라이선스 (v0.7.0, Apache-2.0 고지 의무) */
@@ -63,9 +68,9 @@ fun LicensesScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("오픈소스 라이선스") },
+                title = { Text(tr("오픈소스 라이선스")) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "뒤로") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = tr("뒤로")) }
                 }
             )
         }
@@ -78,7 +83,7 @@ fun LicensesScreen(onBack: () -> Unit) {
         ) {
             item {
                 Text(
-                    "루틴 체크는 아래 오픈소스 소프트웨어를 사용합니다. 모두 Apache License 2.0을 따릅니다.",
+                    tr("루틴 체크는 아래 오픈소스 소프트웨어를 사용합니다. 모두 Apache License 2.0을 따릅니다."),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 12.dp)
@@ -101,7 +106,7 @@ fun LicensesScreen(onBack: () -> Unit) {
                         .clickable { showFullText = !showFullText }
                         .padding(vertical = 16.dp)
                 ) {
-                    Text("Apache License 2.0 전문", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    Text(tr("Apache License 2.0 전문"), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                     Icon(if (showFullText) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, contentDescription = null)
                 }
             }

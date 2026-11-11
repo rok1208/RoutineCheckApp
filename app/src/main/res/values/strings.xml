@@ -1,4 +1,5 @@
 <resources>
-    <string name="app_name">루틴 체크</string>
-    <string name="notification_listener_label">루틴 체크 알림 배지</string>
+    <!-- 기본(영어). 한국어는 values-ko/strings.xml — 휴대폰 언어에 따라 홈 화면 앱 이름이 바뀜 -->
+    <string name="app_name">Routine Check</string>
+    <string name="notification_listener_label">Routine Check notification badges</string>
 </resources>

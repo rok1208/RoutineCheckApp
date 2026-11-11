@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.routinecheck.app.domain.tr
 
 @HiltViewModel
 class AppPickerViewModel @Inject constructor(
@@ -60,18 +61,18 @@ fun AppPickerDialog(
         Surface(modifier = Modifier.fillMaxSize()) {
             Column(Modifier.fillMaxSize().systemBarsPadding()) {
                 Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, contentDescription = "닫기") }
+                    IconButton(onClick = onDismiss) { Icon(Icons.Rounded.Close, contentDescription = tr("닫기")) }
                     Text(title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                     Button(onClick = {
                         val byPkg = (apps.orEmpty() + initialSelected).associateBy { it.packageName }
                         onConfirm(selected.mapNotNull { byPkg[it] })
-                    }) { Text("${selected.size}개 선택") }
+                    }) { Text(tr("{0}개 선택", selected.size)) }
                 }
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
                     leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
-                    placeholder = { Text("앱 이름 검색") },
+                    placeholder = { Text(tr("앱 이름 검색")) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                 )

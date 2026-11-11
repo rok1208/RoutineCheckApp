@@ -35,23 +35,23 @@ object DayMask {
     fun of(vararg days: DayOfWeek): Int = days.fold(0) { acc, d -> acc or bit(d) }
 
     fun shortName(day: DayOfWeek): String = when (day) {
-        DayOfWeek.MONDAY -> "월"
-        DayOfWeek.TUESDAY -> "화"
-        DayOfWeek.WEDNESDAY -> "수"
-        DayOfWeek.THURSDAY -> "목"
-        DayOfWeek.FRIDAY -> "금"
-        DayOfWeek.SATURDAY -> "토"
-        DayOfWeek.SUNDAY -> "일"
+        DayOfWeek.MONDAY -> tr2("월", "Mon")
+        DayOfWeek.TUESDAY -> tr2("화", "Tue")
+        DayOfWeek.WEDNESDAY -> tr2("수", "Wed")
+        DayOfWeek.THURSDAY -> tr2("목", "Thu")
+        DayOfWeek.FRIDAY -> tr2("금", "Fri")
+        DayOfWeek.SATURDAY -> tr2("토", "Sat")
+        DayOfWeek.SUNDAY -> tr2("일", "Sun")
     }
 
     /** 화면 표시용 요약: "매일" / "평일" / "주말" / "월·수·금" / "반복 없음" */
     fun label(mask: Int): String {
         val m = mask and ALL
         return when (m) {
-            0 -> "반복 없음"
-            ALL -> "매일"
-            WEEKDAYS -> "평일"
-            WEEKEND -> "주말"
+            0 -> tr("반복 없음")
+            ALL -> tr("매일")
+            WEEKDAYS -> tr("평일")
+            WEEKEND -> tr("주말")
             else -> days(m).joinToString("·") { shortName(it) }
         }
     }

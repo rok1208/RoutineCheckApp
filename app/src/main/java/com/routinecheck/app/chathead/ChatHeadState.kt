@@ -6,6 +6,7 @@ import com.routinecheck.app.data.repository.ChatHeadSettings
 import com.routinecheck.app.data.repository.EdgeSide
 import com.routinecheck.app.domain.ChatHeadEntry
 import com.routinecheck.app.domain.ChatHeadKind
+import com.routinecheck.app.domain.tr
 
 /** 챗헤드의 상태 4가지 (노션 화면 설계 ③~⑥) */
 enum class HeadMode {
@@ -20,7 +21,7 @@ enum class HeadMode {
 /** 진행 중 루틴 요약 (확장 화면 머리말, 원형 아이콘 진행 링) */
 data class RoutineProgress(val name: String, val done: Int, val total: Int, val extraCount: Int) {
     val fraction: Float get() = if (total == 0) 0f else done.toFloat() / total
-    val title: String get() = if (extraCount > 0) "$name 외 ${extraCount}개" else name
+    val title: String get() = if (extraCount > 0) tr("{0} 외 {1}개", name, extraCount) else name
 }
 
 /** 지금 열어 둔 폴더 경로의 한 칸 (최상단 → … → 현재 폴더) */

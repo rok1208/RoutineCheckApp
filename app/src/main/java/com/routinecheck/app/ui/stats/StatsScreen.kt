@@ -67,6 +67,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import com.routinecheck.app.domain.tr
+import com.routinecheck.app.domain.tr2
 
 // ─────────────────────────────── 배지 기록
 
@@ -189,7 +191,7 @@ fun StatsScreen(viewModel: StatsViewModel = hiltViewModel()) {
 
     CoachTour(id = "stats", enabled = ui != null, steps = statsTourSteps())
 
-    Scaffold(topBar = { TopAppBar(title = { Text("통계") }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { Text(tr("통계")) }) }) { padding ->
         val state = ui ?: return@Scaffold
         val s = state.summary
         Column(
@@ -200,7 +202,7 @@ fun StatsScreen(viewModel: StatsViewModel = hiltViewModel()) {
                 .padding(horizontal = 16.dp)
         ) {
             Text(
-                "${s.startDate.monthValue}월 ${s.startDate.dayOfMonth}일 시작 · ${s.dayNumber}일째 기록 중",
+                tr("{0}월 {1}일 시작 · {2}일째 기록 중", s.startDate.monthValue, s.startDate.dayOfMonth, s.dayNumber),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 8.dp)
@@ -212,32 +214,32 @@ fun StatsScreen(viewModel: StatsViewModel = hiltViewModel()) {
             Spacer(Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 StatTile(
-                    "오늘",
+                    tr("오늘"),
                     if (s.today.hasRoutine) "${s.today.done}/${s.today.total}" else "—",
-                    if (s.today.hasRoutine) "앱 확인" else "예정 루틴 없음",
+                    if (s.today.hasRoutine) tr("앱 확인") else tr("예정 루틴 없음"),
                     Modifier.weight(1f)
                 )
                 StatTile(
-                    "시작 이후",
+                    tr("시작 이후"),
                     s.overallRate?.let { "${(it * 100).roundToInt()}%" } ?: "—",
-                    "${s.dayNumber}일 평균",
+                    tr("{0}일 평균", s.dayNumber),
                     Modifier.weight(1f)
                 )
-                StatTile("완벽한 날", "${s.perfectDays}일", "모두 끝낸 날", Modifier.weight(1f))
+                StatTile(tr("완벽한 날"), tr("{0}일", s.perfectDays), tr("모두 끝낸 날"), Modifier.weight(1f))
             }
 
             Column(Modifier.coachTarget("stats.week")) {
-                SectionHeader("주간 달성도")
+                SectionHeader(tr("주간 달성도"))
                 WeekPager(s)
             }
 
             Column(Modifier.coachTarget("stats.badges")) {
-                SectionHeader("배지 ${state.badges.count { it.earned }}/${state.badges.size}")
+                SectionHeader(tr("배지 {0}/{1}", state.badges.count { it.earned }, state.badges.size))
                 BadgeGrid(state.badges, onClick = { badgeDetail = it })
             }
 
             if (s.perRoutine.isNotEmpty()) {
-                SectionHeader("루틴별 연속 기록")
+                SectionHeader(tr("루틴별 연속 기록"))
                 s.perRoutine.forEach { RoutineRow(it) }
             }
             Spacer(Modifier.height(32.dp))
@@ -249,7 +251,7 @@ fun StatsScreen(viewModel: StatsViewModel = hiltViewModel()) {
     if (celebrate.isNotEmpty()) {
         AlertDialog(
             onDismissRequest = viewModel::dismissCelebration,
-            title = { Text(if (celebrate.size == 1) "새 배지를 얻었어요! 🎉" else "배지 ${celebrate.size}개를 얻었어요! 🎉") },
+            title = { Text(if (celebrate.size == 1) tr("새 배지를 얻었어요! 🎉") else tr("배지 {0}개를 얻었어요! 🎉", celebrate.size)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     celebrate.forEach { b ->
@@ -264,7 +266,7 @@ fun StatsScreen(viewModel: StatsViewModel = hiltViewModel()) {
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = viewModel::dismissCelebration) { Text("좋아요") } }
+            confirmButton = { TextButton(onClick = viewModel::dismissCelebration) { Text(tr("좋아요")) } }
         )
     }
 
@@ -275,43 +277,43 @@ fun StatsScreen(viewModel: StatsViewModel = hiltViewModel()) {
             title = { Text(b.badge.title) },
             text = {
                 Text(
-                    if (b.earned) "${b.badge.description}\n${b.earnedOn!!.monthValue}월 ${b.earnedOn.dayOfMonth}일에 얻었어요."
-                    else "${badgeGoalText(b.badge)}\n지금 ${b.current} / ${b.badge.target}",
+                    if (b.earned) tr("{0}\n{1}월 {2}일에 얻었어요.", b.badge.description, b.earnedOn!!.monthValue, b.earnedOn.dayOfMonth)
+                    else tr("{0}\n지금 {1} / {2}", badgeGoalText(b.badge), b.current, b.badge.target),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
                 )
             },
-            confirmButton = { TextButton(onClick = { badgeDetail = null }) { Text("닫기") } }
+            confirmButton = { TextButton(onClick = { badgeDetail = null }) { Text(tr("닫기")) } }
         )
     }
 }
 
 private fun badgeGoalText(badge: AchievementBadge): String = when (badge.metric) {
-    com.routinecheck.app.domain.BadgeMetric.CHECKS -> "루틴 앱을 ${badge.target}번 확인하면 얻어요."
-    com.routinecheck.app.domain.BadgeMetric.PERFECT_DAYS -> "루틴을 모두 끝낸 날이 ${badge.target}일이 되면 얻어요."
-    com.routinecheck.app.domain.BadgeMetric.BEST_STREAK -> "${badge.target}일 연속으로 루틴을 모두 끝내면 얻어요."
+    com.routinecheck.app.domain.BadgeMetric.CHECKS -> tr("루틴 앱을 {0}번 확인하면 얻어요.", badge.target)
+    com.routinecheck.app.domain.BadgeMetric.PERFECT_DAYS -> tr("루틴을 모두 끝낸 날이 {0}일이 되면 얻어요.", badge.target)
+    com.routinecheck.app.domain.BadgeMetric.BEST_STREAK -> tr("{0}일 연속으로 루틴을 모두 끝내면 얻어요.", badge.target)
 }
 
 private fun statsTourSteps(): List<CoachStep> = listOf(
     CoachStep(
         target = "stats.hero",
-        title = "내 등급과 오늘의 한마디",
-        body = "루틴 앱을 확인할수록 등급이 올라가요. 카드를 누르면 전체 등급과 올라가는 조건을 볼 수 있어요."
+        title = tr("내 등급과 오늘의 한마디"),
+        body = tr("루틴 앱을 확인할수록 등급이 올라가요. 카드를 누르면 전체 등급과 올라가는 조건을 볼 수 있어요.")
     ),
     CoachStep(
         target = "stats.streak",
-        title = "연속 기록",
-        body = "예정된 루틴을 모두 끝낸 날이 며칠 이어졌는지 보여줘요. 루틴이 없는 날은 기록이 끊기지 않아요."
+        title = tr("연속 기록"),
+        body = tr("예정된 루틴을 모두 끝낸 날이 며칠 이어졌는지 보여줘요. 루틴이 없는 날은 기록이 끊기지 않아요.")
     ),
     CoachStep(
         target = "stats.week",
-        title = "주간 달성도",
-        body = "요일마다 얼마나 끝냈는지 막대로 보여줘요. ‹ 버튼으로 지난 주 기록을 넘겨 볼 수 있어요."
+        title = tr("주간 달성도"),
+        body = tr("요일마다 얼마나 끝냈는지 막대로 보여줘요. ‹ 버튼으로 지난 주 기록을 넘겨 볼 수 있어요.")
     ),
     CoachStep(
         target = "stats.badges",
-        title = "배지",
-        body = "연속 기록이나 확인 횟수 목표를 넘으면 배지를 얻어요. 눌러서 얻는 방법을 볼 수 있어요."
+        title = tr("배지"),
+        body = tr("연속 기록이나 확인 횟수 목표를 넘으면 배지를 얻어요. 눌러서 얻는 방법을 볼 수 있어요.")
     )
 )
 
@@ -336,7 +338,7 @@ private fun HeroCard(state: StatsUiState, onClick: () -> Unit, modifier: Modifie
                 Column(Modifier.weight(1f)) {
                     Text(level.title, color = Color.White, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                     Text(
-                        "${total}단계 중 ${level.ordinal + 1}단계 · 앱 ${state.checks}번 확인",
+                        tr("{0}단계 중 {1}단계 · 앱 {2}번 확인", total, level.ordinal + 1, state.checks),
                         color = Color.White.copy(alpha = 0.85f),
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -344,7 +346,7 @@ private fun HeroCard(state: StatsUiState, onClick: () -> Unit, modifier: Modifie
                 // 누르면 전체 등급표가 열린다는 표시
                 Surface(color = Color.White.copy(alpha = 0.22f), shape = RoundedCornerShape(50)) {
                     Row(Modifier.padding(start = 10.dp, end = 4.dp, top = 4.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Text("등급표", color = Color.White, style = MaterialTheme.typography.labelMedium)
+                        Text(tr("등급표"), color = Color.White, style = MaterialTheme.typography.labelMedium)
                         Icon(Icons.Rounded.ChevronRight, contentDescription = null, tint = Color.White, modifier = Modifier.size(18.dp))
                     }
                 }
@@ -369,7 +371,7 @@ private fun HeroCard(state: StatsUiState, onClick: () -> Unit, modifier: Modifie
             }
             val next = level.next
             Text(
-                if (next != null) "다음 등급 '${next.title}'까지 앱 ${next.minChecks - state.checks}번 더 확인" else "최고 등급이에요!",
+                if (next != null) tr("다음 등급 '{0}'까지 앱 {1}번 더 확인", next.title, next.minChecks - state.checks) else tr("최고 등급이에요!"),
                 color = Color.White.copy(alpha = 0.85f),
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier.padding(top = 6.dp)
@@ -388,11 +390,11 @@ private fun LevelDialog(checks: Int, onDismiss: () -> Unit) {
     val levels = RoutineLevel.entries
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("등급표 (${levels.size}단계)") },
+        title = { Text(tr("등급표 ({0}단계)", levels.size)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    "루틴 앱을 확인(체크)할 때마다 1씩 쌓이고, 쌓인 수로 등급이 올라가요. 지금까지 ${checks}번 확인했어요.",
+                    tr("루틴 앱을 확인(체크)할 때마다 1씩 쌓이고, 쌓인 수로 등급이 올라가요. 지금까지 {0}번 확인했어요.", checks),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -410,12 +412,12 @@ private fun LevelDialog(checks: Int, onDismiss: () -> Unit) {
                             Spacer(Modifier.width(10.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(
-                                    "${l.ordinal + 1}단계 · ${l.title}",
+                                    tr("{0}단계 · {1}", l.ordinal + 1, l.title),
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = if (isCurrent) FontWeight.Bold else FontWeight.Normal
                                 )
                                 Text(
-                                    if (next != null) "앱 확인 ${l.minChecks}~${next.minChecks - 1}번" else "앱 확인 ${l.minChecks}번 이상",
+                                    if (next != null) tr("앱 확인 {0}~{1}번", l.minChecks, next.minChecks - 1) else tr("앱 확인 {0}번 이상", l.minChecks),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -425,7 +427,7 @@ private fun LevelDialog(checks: Int, onDismiss: () -> Unit) {
                                         modifier = Modifier.fillMaxWidth().padding(top = 6.dp).height(4.dp).clip(RoundedCornerShape(2.dp))
                                     )
                                     Text(
-                                        "다음 단계까지 ${next.minChecks - checks}번",
+                                        tr("다음 단계까지 {0}번", next.minChecks - checks),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.primary,
                                         modifier = Modifier.padding(top = 2.dp)
@@ -433,15 +435,15 @@ private fun LevelDialog(checks: Int, onDismiss: () -> Unit) {
                                 }
                             }
                             when {
-                                isCurrent -> Text("지금 여기", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                                reached -> Icon(Icons.Rounded.Check, contentDescription = "달성", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
+                                isCurrent -> Text(tr("지금 여기"), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                                reached -> Icon(Icons.Rounded.Check, contentDescription = tr("달성"), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
                             }
                         }
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("닫기") } }
+        confirmButton = { TextButton(onClick = onDismiss) { Text(tr("닫기")) } }
     )
 }
 
@@ -458,12 +460,12 @@ private fun StreakCard(s: StatsSummary, bestStreak: Int, modifier: Modifier = Mo
                 Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text(
-                        if (streak > 0) "${streak}일 연속" else "연속 기록 0일",
+                        if (streak > 0) tr("{0}일 연속", streak) else tr("연속 기록 0일"),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        "루틴을 모두 끝낸 날 · 최고 ${bestStreak}일" + if (streak > 0 && streak >= bestStreak) " (최고 기록 중!)" else "",
+                        tr("루틴을 모두 끝낸 날 · 최고 {0}일", bestStreak) + if (streak > 0 && streak >= bestStreak) tr(" (최고 기록 중!)") else "",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -477,7 +479,7 @@ private fun StreakCard(s: StatsSummary, bestStreak: Int, modifier: Modifier = Mo
                     modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp))
                 )
                 Text(
-                    "${nextGoal}일 연속까지 ${nextGoal - streak}일 남았어요",
+                    tr("{0}일 연속까지 {1}일 남았어요", nextGoal, nextGoal - streak),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 4.dp)
@@ -547,23 +549,23 @@ private fun WeekPager(s: StatsSummary) {
 
     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
         IconButton(onClick = { offset++ }, enabled = canPrev) {
-            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, contentDescription = "지난 주")
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, contentDescription = tr("지난 주"))
         }
         Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                when (offset) { 0 -> "이번 주"; 1 -> "지난주"; else -> "${offset}주 전" },
+                when (offset) { 0 -> tr("이번 주"); 1 -> tr("지난주"); else -> tr("{0}주 전", offset) },
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                "${weekStart.monthValue}월 ${weekStart.dayOfMonth}일 – " +
-                    (if (weekEnd.monthValue != weekStart.monthValue) "${weekEnd.monthValue}월 " else "") + "${weekEnd.dayOfMonth}일",
+                tr("{0}월 {1}일 – ", weekStart.monthValue, weekStart.dayOfMonth) +
+                    (if (weekEnd.monthValue != weekStart.monthValue) tr("{0}월 ", weekEnd.monthValue) else "") + tr2("{0}일", "{0}", weekEnd.dayOfMonth),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         IconButton(onClick = { offset-- }, enabled = canNext) {
-            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "다음 주")
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = tr("다음 주"))
         }
     }
 
@@ -572,15 +574,15 @@ private fun WeekPager(s: StatsSummary) {
     val prevRate = if (weekStart.minusDays(1).isBefore(s.startDate)) null
     else s.rateBetween(weekStart.minusWeeks(1), weekStart.minusDays(1))
     val summary = when {
-        rate == null -> "이 주에는 예정된 루틴 기록이 없어요"
-        prevRate == null -> "이 주 평균 ${(rate * 100).roundToInt()}%"
+        rate == null -> tr("이 주에는 예정된 루틴 기록이 없어요")
+        prevRate == null -> tr("이 주 평균 {0}%", (rate * 100).roundToInt())
         else -> {
             val now = (rate * 100).roundToInt()
             val diff = now - (prevRate * 100).roundToInt()
             when {
-                diff > 0 -> "이 주 평균 ${now}% · 전 주보다 ${diff}%p 올랐어요 📈"
-                diff < 0 -> "이 주 평균 ${now}% · 전 주보다 ${-diff}%p 낮아요"
-                else -> "이 주 평균 ${now}% · 전 주만큼 꾸준해요"
+                diff > 0 -> tr("이 주 평균 {0}% · 전 주보다 {1}%p 올랐어요 📈", now, diff)
+                diff < 0 -> tr("이 주 평균 {0}% · 전 주보다 {1}%p 낮아요", now, -diff)
+                else -> tr("이 주 평균 {0}% · 전 주만큼 꾸준해요", now)
             }
         }
     }
@@ -609,11 +611,11 @@ private fun WeekChart(cells: List<WeekCell>) {
     val sel = cells[selected]
     val selStat = sel.stat
     Text(
-        text = "${sel.date.monthValue}월 ${sel.date.dayOfMonth}일 (${DayMask.shortName(sel.date.dayOfWeek)}) · " + when {
-            sel.beforeStart -> "앱 시작 전"
-            sel.future -> "아직 오지 않은 날"
-            selStat != null && selStat.hasRoutine -> "${selStat.done}/${selStat.total} 확인 · ${(selStat.rate * 100).roundToInt()}%"
-            else -> "예정된 루틴 없음"
+        text = tr("{0}월 {1}일 ({2}) · ", sel.date.monthValue, sel.date.dayOfMonth, DayMask.shortName(sel.date.dayOfWeek)) + when {
+            sel.beforeStart -> tr("앱 시작 전")
+            sel.future -> tr("아직 오지 않은 날")
+            selStat != null && selStat.hasRoutine -> tr("{0}/{1} 확인 · {2}%", selStat.done, selStat.total, (selStat.rate * 100).roundToInt())
+            else -> tr("예정된 루틴 없음")
         },
         style = MaterialTheme.typography.bodySmall,
         color = muted,
@@ -631,11 +633,11 @@ private fun WeekChart(cells: List<WeekCell>) {
                     .clip(RoundedCornerShape(8.dp))
                     .clickable { selected = index }
                     .semantics {
-                        contentDescription = "${cell.date.monthValue}월 ${cell.date.dayOfMonth}일 " + when {
-                            cell.beforeStart -> "시작 전"
-                            cell.future -> "예정"
-                            stat != null && stat.hasRoutine -> "완료율 ${(stat.rate * 100).roundToInt()}%"
-                            else -> "루틴 없음"
+                        contentDescription = tr("{0}월 {1}일 ", cell.date.monthValue, cell.date.dayOfMonth) + when {
+                            cell.beforeStart -> tr("시작 전")
+                            cell.future -> tr("예정")
+                            stat != null && stat.hasRoutine -> tr("완료율 {0}%", (stat.rate * 100).roundToInt())
+                            else -> tr("루틴 없음")
                         }
                     },
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -689,7 +691,7 @@ private fun WeekChart(cells: List<WeekCell>) {
         }
     }
     Text(
-        "막대 = 그날 끝낸 비율 · 아래 숫자 % · ✓ 모두 끝낸 날",
+        tr("막대 = 그날 끝낸 비율 · 아래 숫자 % · ✓ 모두 끝낸 날"),
         style = MaterialTheme.typography.labelSmall,
         color = muted,
         modifier = Modifier.padding(top = 4.dp)
@@ -747,10 +749,10 @@ private fun RoutineRow(stat: RoutineStat) {
         Text(stat.routine.name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
         Text(
             when {
-                stat.scheduledDays == 0 -> "아직 기록 없음"
-                stat.streak >= 1 -> "🔥 ${stat.streak}번 연속" + if (stat.bestStreak > stat.streak) " · 최고 ${stat.bestStreak}" else ""
-                stat.bestStreak >= 1 -> "최고 ${stat.bestStreak}번 연속"
-                else -> "첫 완료를 기다려요"
+                stat.scheduledDays == 0 -> tr("아직 기록 없음")
+                stat.streak >= 1 -> tr("🔥 {0}번 연속", stat.streak) + if (stat.bestStreak > stat.streak) tr(" · 최고 {0}", stat.bestStreak) else ""
+                stat.bestStreak >= 1 -> tr("최고 {0}번 연속", stat.bestStreak)
+                else -> tr("첫 완료를 기다려요")
             },
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = if (stat.streak >= 1) FontWeight.SemiBold else FontWeight.Normal,

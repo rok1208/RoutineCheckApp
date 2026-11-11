@@ -60,6 +60,7 @@ import com.routinecheck.app.ui.common.coachTarget
 import com.routinecheck.app.ui.common.enableChatHead
 import com.routinecheck.app.ui.common.rememberPermissionRequester
 import java.time.LocalDate
+import com.routinecheck.app.domain.tr
 
 /**
  * ① 홈. 챗헤드가 앱의 중심이므로 맨 위에 챗헤드 카드(켜기/끄기, 등록 항목)를 두고,
@@ -115,10 +116,10 @@ fun HomeScreen(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(todayTitle(), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("루틴 체크", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                    Text(tr("루틴 체크"), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
                 }
                 IconButton(onClick = onOpenSettings, modifier = Modifier.coachTarget("home.settings")) {
-                    Icon(Icons.Rounded.Settings, contentDescription = "설정")
+                    Icon(Icons.Rounded.Settings, contentDescription = tr("설정"))
                 }
             }
         }
@@ -185,7 +186,7 @@ fun HomeScreen(
                 ) {
                     Icon(Icons.Rounded.EditNote, contentDescription = null, modifier = Modifier.size(16.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("전체 메모 보기", style = MaterialTheme.typography.labelMedium)
+                    Text(tr("전체 메모 보기"), style = MaterialTheme.typography.labelMedium)
                     Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null, modifier = Modifier.size(16.dp))
                 }
             }
@@ -203,17 +204,17 @@ fun HomeScreen(
                 val compact = otherDay && canAddSchedule
                 if (canAddSchedule) {
                     CompactTextButton(
-                        text = "일정 추가",
+                        text = tr("일정 추가"),
                         icon = if (compact) null else Icons.Rounded.Event,
                         compact = compact,
                         onClick = { onNewSchedule(day?.date ?: LocalDate.now()) }
                     )
                 }
                 if (otherDay) {
-                    CompactTextButton(text = "루틴 추가", compact = compact, onClick = onNewRoutine)
-                    CompactTextButton(text = "오늘로", compact = compact, onClick = viewModel::backToToday)
+                    CompactTextButton(text = tr("루틴 추가"), compact = compact, onClick = onNewRoutine)
+                    CompactTextButton(text = tr("오늘로"), compact = compact, onClick = viewModel::backToToday)
                 } else {
-                    CompactTextButton(text = "루틴 만들기", icon = Icons.Rounded.Add, onClick = onNewRoutine)
+                    CompactTextButton(text = tr("루틴 만들기"), icon = Icons.Rounded.Add, onClick = onNewRoutine)
                 }
             }
         }
@@ -225,12 +226,12 @@ fun HomeScreen(
                 Card(modifier = Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(20.dp)) {
                         Text(
-                            if (day.isToday) "오늘 예정된 일정과 루틴이 없어요" else "이 날 예정된 일정과 루틴이 없어요",
+                            if (day.isToday) tr("오늘 예정된 일정과 루틴이 없어요") else tr("이 날 예정된 일정과 루틴이 없어요"),
                             style = MaterialTheme.typography.titleSmall
                         )
                         Text(
-                            "날짜를 정해 한 번만 울리는 일정이나 요일마다 반복되는 루틴을 만들 수 있어요. " +
-                                "시간이 되면 알려주고, 등록한 앱이 챗헤드 맨 앞에 올라와요.",
+                            tr("날짜를 정해 한 번만 울리는 일정이나 요일마다 반복되는 루틴을 만들 수 있어요. ") +
+                                tr("시간이 되면 알려주고, 등록한 앱이 챗헤드 맨 앞에 올라와요."),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -240,7 +241,7 @@ fun HomeScreen(
         }
         // v0.5.0: 그 날짜의 일정이 맨 위, 그 아래 요일 반복 루틴
         if (schedules.isNotEmpty()) {
-            item(key = "schedules-label") { ListLabel("일정") }
+            item(key = "schedules-label") { ListLabel(tr("일정")) }
             items(schedules, key = { it.routine.routineId }) { today ->
                 TodayRoutineCard(
                     today = today,
@@ -251,7 +252,7 @@ fun HomeScreen(
                 )
                 Spacer(Modifier.height(10.dp))
             }
-            if (routines.isNotEmpty()) item(key = "routines-label") { ListLabel("반복 루틴") }
+            if (routines.isNotEmpty()) item(key = "routines-label") { ListLabel(tr("반복 루틴")) }
         }
         items(routines, key = { it.routine.routineId }) { today ->
             TodayRoutineCard(
@@ -301,60 +302,60 @@ private fun homeTourSteps(
 ): List<CoachStep> = listOf(
     CoachStep(
         target = null,
-        title = "루틴 체크에 오신 걸 환영해요 👋",
-        body = "챗헤드로 자주 쓰는 앱을 바로 열고, 매일 할 루틴을 놓치지 않게 도와주는 앱이에요. 주요 기능을 1분 안에 보여드릴게요.",
+        title = tr("루틴 체크에 오신 걸 환영해요 👋"),
+        body = tr("챗헤드로 자주 쓰는 앱을 바로 열고, 매일 할 루틴을 놓치지 않게 도와주는 앱이에요. 주요 기능을 1분 안에 보여드릴게요."),
         prepare = scrollTop
     ),
     CoachStep(
         target = "home.chathead",
-        title = "챗헤드",
-        body = "켜 두면 어느 화면에서든 작은 동그라미가 떠 있어요. 누르면 앱 목록이 펼쳐지고, 화면 끝까지 밀면 가장자리 바로 숨어요. 아래쪽 X로 끌어다 놓으면 꺼져요.",
+        title = tr("챗헤드"),
+        body = tr("켜 두면 어느 화면에서든 작은 동그라미가 떠 있어요. 누르면 앱 목록이 펼쳐지고, 화면 끝까지 밀면 가장자리 바로 숨어요. 아래쪽 X로 끌어다 놓으면 꺼져요."),
         prepare = scrollTop
     ),
     CoachStep(
         target = "home.chathead.toggle",
-        title = "챗헤드 켜기·끄기",
-        body = "여기서 챗헤드를 켜고 꺼요. 처음 켤 때 '다른 앱 위에 표시' 권한을 물어봐요."
+        title = tr("챗헤드 켜기·끄기"),
+        body = tr("여기서 챗헤드를 켜고 꺼요. 처음 켤 때 '다른 앱 위에 표시' 권한을 물어봐요.")
     ),
     CoachStep(
         target = "home.chathead.items",
-        title = "챗헤드 항목",
-        body = "챗헤드에 띄울 앱·웹사이트·폴더를 고르고 순서를 정해요. 루틴 시간에는 그 루틴의 앱이 맨 앞에 와요."
+        title = tr("챗헤드 항목"),
+        body = tr("챗헤드에 띄울 앱·웹사이트·폴더를 고르고 순서를 정해요. 루틴 시간에는 그 루틴의 앱이 맨 앞에 와요.")
     ),
     CoachStep(
         target = "home.week",
-        title = "주간 달력",
-        body = "날짜를 누르면 그 날의 루틴과 메모가 보여요. 위쪽 ‹ › 로 지난주·다음 주로 넘어가요."
+        title = tr("주간 달력"),
+        body = tr("날짜를 누르면 그 날의 루틴과 메모가 보여요. 위쪽 ‹ › 로 지난주·다음 주로 넘어가요.")
     ),
     CoachStep(
         target = "home.memo",
-        title = "날짜별 메모",
-        body = "고른 날짜의 할 일이나 생각을 적어요. 입력하면 바로 자동 저장돼요."
+        title = tr("날짜별 메모"),
+        body = tr("고른 날짜의 할 일이나 생각을 적어요. 입력하면 바로 자동 저장돼요.")
     ),
     CoachStep(
         target = "home.add",
-        title = "일정·루틴 만들기",
-        body = "루틴은 고른 요일마다 반복되고, 일정은 정한 날짜에 한 번만 실행돼요. 시간이 되면 알려주고, 등록한 앱이 챗헤드 맨 앞에 올라와요.",
+        title = tr("일정·루틴 만들기"),
+        body = tr("루틴은 고른 요일마다 반복되고, 일정은 정한 날짜에 한 번만 실행돼요. 시간이 되면 알려주고, 등록한 앱이 챗헤드 맨 앞에 올라와요."),
         prepare = scrollToDayHeader
     ),
     CoachStep(
         target = "nav.tabs",
-        title = "루틴 · 통계 탭",
-        body = "루틴 탭에서 모든 루틴과 일정을 관리하고, 통계 탭에서 달성률과 연속 기록, 배지를 확인해요."
+        title = tr("루틴 · 통계 탭"),
+        body = tr("루틴 탭에서 모든 루틴과 일정을 관리하고, 통계 탭에서 달성률과 연속 기록, 배지를 확인해요.")
     ),
     CoachStep(
         target = "home.settings",
-        title = "설정",
-        body = "챗헤드 모양, 알림 방식, 권한을 바꿀 수 있어요. 이 가이드도 설정에서 언제든 다시 볼 수 있어요.",
+        title = tr("설정"),
+        body = tr("챗헤드 모양, 알림 방식, 권한을 바꿀 수 있어요. 이 가이드도 설정에서 언제든 다시 볼 수 있어요."),
         prepare = scrollTop
     )
 )
 
 /** "오늘의 루틴" / "10월 13일 (화) 루틴" */
 private fun dayTitle(day: com.routinecheck.app.data.repository.TodaySnapshot?): String {
-    if (day == null || day.isToday) return "오늘의 루틴"
+    if (day == null || day.isToday) return tr("오늘의 루틴")
     val d = day.date
-    return "${d.monthValue}월 ${d.dayOfMonth}일 (${DayMask.shortName(d.dayOfWeek)}) 루틴"
+    return tr("{0}월 {1}일 ({2}) 루틴", d.monthValue, d.dayOfMonth, DayMask.shortName(d.dayOfWeek))
 }
 
 /** 닫힌 메모지 자리: 얇은 카드 버튼 */
@@ -373,7 +374,7 @@ private fun MemoOpenButton(date: LocalDate, hasMemo: Boolean, onClick: () -> Uni
             Icon(if (hasMemo) Icons.Rounded.EditNote else Icons.Rounded.Add, contentDescription = null, tint = ink)
             Spacer(Modifier.width(8.dp))
             Text(
-                "${date.monthValue}월 ${date.dayOfMonth}일 (${DayMask.shortName(date.dayOfWeek)}) " + if (hasMemo) "메모 보기" else "메모 작성",
+                tr("{0}월 {1}일 ({2}) ", date.monthValue, date.dayOfMonth, DayMask.shortName(date.dayOfWeek)) + if (hasMemo) tr("메모 보기") else tr("메모 작성"),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Medium,
                 color = ink
@@ -398,7 +399,7 @@ private fun MemoPaper(memo: MemoPanelState, onChange: (String) -> Unit, onClose:
                 Spacer(Modifier.width(6.dp))
                 val d = memo.date
                 Text(
-                    "${d.monthValue}월 ${d.dayOfMonth}일 (${DayMask.shortName(d.dayOfWeek)}) 메모",
+                    tr("{0}월 {1}일 ({2}) 메모", d.monthValue, d.dayOfMonth, DayMask.shortName(d.dayOfWeek)),
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold,
                     color = ink,
@@ -407,13 +408,13 @@ private fun MemoPaper(memo: MemoPanelState, onChange: (String) -> Unit, onClose:
                 Text(
                     when {
                         !memo.loaded -> ""
-                        memo.saved -> "저장됨"
-                        else -> "저장 중…"
+                        memo.saved -> tr("저장됨")
+                        else -> tr("저장 중…")
                     },
                     style = MaterialTheme.typography.labelSmall,
                     color = ink.copy(alpha = 0.6f)
                 )
-                IconButton(onClick = onClose) { Icon(Icons.Rounded.Close, contentDescription = "메모 닫기", tint = ink) }
+                IconButton(onClick = onClose) { Icon(Icons.Rounded.Close, contentDescription = tr("메모 닫기"), tint = ink) }
             }
             BasicTextField(
                 value = memo.text,
@@ -429,7 +430,7 @@ private fun MemoPaper(memo: MemoPanelState, onChange: (String) -> Unit, onClose:
                     Box {
                         if (memo.text.isEmpty()) {
                             Text(
-                                "이 날의 할 일이나 생각을 적어 보세요",
+                                tr("이 날의 할 일이나 생각을 적어 보세요"),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = ink.copy(alpha = 0.4f)
                             )
@@ -444,7 +445,7 @@ private fun MemoPaper(memo: MemoPanelState, onChange: (String) -> Unit, onClose:
 
 private fun todayTitle(): String {
     val d = LocalDate.now()
-    return "${d.monthValue}월 ${d.dayOfMonth}일 ${DayMask.shortName(d.dayOfWeek)}요일"
+    return tr("{0}월 {1}일 {2}요일", d.monthValue, d.dayOfMonth, DayMask.shortName(d.dayOfWeek))
 }
 
 @Composable
@@ -457,12 +458,12 @@ private fun PermissionWarningCard(onFix: () -> Unit) {
             Icon(Icons.Rounded.WarningAmber, contentDescription = null, tint = MaterialTheme.colorScheme.onErrorContainer)
             Spacer(Modifier.width(12.dp))
             Text(
-                "'다른 앱 위에 표시' 권한이 꺼져 있어 챗헤드가 동작하지 않아요.",
+                tr("'다른 앱 위에 표시' 권한이 꺼져 있어 챗헤드가 동작하지 않아요."),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onErrorContainer,
                 modifier = Modifier.weight(1f)
             )
-            TextButton(onClick = onFix) { Text("해결하기") }
+            TextButton(onClick = onFix) { Text(tr("해결하기")) }
         }
     }
 }
@@ -493,9 +494,9 @@ private fun ChatHeadCard(
                     ) { ChatHeadPreview(settings.iconUri, 50.dp) }
                     Spacer(Modifier.width(14.dp))
                     Column(Modifier.weight(1f)) {
-                        Text("챗헤드", color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text(tr("챗헤드"), color = Color.White, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                         Text(
-                            if (settings.enabled) "켜짐 · ${settings.uiStyle.label}" else "꺼짐",
+                            if (settings.enabled) tr("켜짐 · {0}", settings.uiStyle.label) else tr("꺼짐"),
                             color = Color.White.copy(alpha = 0.85f),
                             style = MaterialTheme.typography.bodySmall
                         )
@@ -512,7 +513,7 @@ private fun ChatHeadCard(
                 if (activeCount > 0) {
                     Spacer(Modifier.height(10.dp))
                     Text(
-                        "진행 중인 루틴 ${activeCount}개의 앱이 챗헤드 맨 앞에 올라와 있어요",
+                        tr("진행 중인 루틴 {0}개의 앱이 챗헤드 맨 앞에 올라와 있어요", activeCount),
                         color = Color.White,
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -521,7 +522,7 @@ private fun ChatHeadCard(
                 Spacer(Modifier.height(14.dp))
                 if (state.pinnedEntries.isEmpty()) {
                     Text(
-                        "자주 쓰는 앱·웹사이트를 등록하거나 폴더로 묶으면 어느 화면에서든 챗헤드로 바로 열 수 있어요.",
+                        tr("자주 쓰는 앱·웹사이트를 등록하거나 폴더로 묶으면 어느 화면에서든 챗헤드로 바로 열 수 있어요."),
                         color = Color.White.copy(alpha = 0.9f),
                         style = MaterialTheme.typography.bodySmall
                     )
@@ -561,7 +562,7 @@ private fun ChatHeadCard(
                     FilledTonalButton(onClick = onManageApps, modifier = Modifier.coachTarget("home.chathead.items")) {
                         Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("항목 관리")
+                        Text(tr("항목 관리"))
                     }
 //                    FilledTonalButton(onClick = onOpenSettings) {
 //                        Icon(Icons.Rounded.Tune, contentDescription = null, modifier = Modifier.size(18.dp))
@@ -586,34 +587,34 @@ private fun WeekHeader(
     val first = cells.firstOrNull()?.date
     val last = cells.lastOrNull()?.date
     val label = when (offset) {
-        0L -> "이번 주"
-        1L -> "다음 주"
-        -1L -> "지난주"
-        else -> if (offset > 0) "${offset}주 뒤" else "${-offset}주 전"
+        0L -> tr("이번 주")
+        1L -> tr("다음 주")
+        -1L -> tr("지난주")
+        else -> if (offset > 0) tr("{0}주 뒤", offset) else tr("{0}주 전", -offset)
     }
     val range = if (first != null && last != null) {
-        if (first.monthValue == last.monthValue) "${first.monthValue}월 ${first.dayOfMonth}일 – ${last.dayOfMonth}일"
-        else "${first.monthValue}월 ${first.dayOfMonth}일 – ${last.monthValue}월 ${last.dayOfMonth}일"
+        if (first.monthValue == last.monthValue) tr("{0}월 {1}일 – {2}일", first.monthValue, first.dayOfMonth, last.dayOfMonth)
+        else tr("{0}월 {1}일 – {2}월 {3}일", first.monthValue, first.dayOfMonth, last.monthValue, last.dayOfMonth)
     } else ""
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp)
     ) {
         IconButton(onClick = onPrev) {
-            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, contentDescription = "지난주")
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowLeft, contentDescription = tr("지난주"))
         }
         Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
             Text(range, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         IconButton(onClick = onNext) {
-            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = "다음 주")
+            Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = tr("다음 주"))
         }
     }
     if (offset != 0L) {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             TextButton(onClick = onThisWeek, modifier = Modifier.height(32.dp)) {
-                Text("이번 주로 돌아가기", style = MaterialTheme.typography.labelMedium)
+                Text(tr("이번 주로 돌아가기"), style = MaterialTheme.typography.labelMedium)
             }
         }
     }
@@ -651,7 +652,7 @@ private fun WeekStrip(cells: List<WeekDayCell>, onClick: (LocalDate) -> Unit) {
         }
     }
     Text(
-        "● 파랑: 루틴·일정 있음  ● 노랑: 메모 있음 · 날짜를 누르면 그 날의 메모와 일정·루틴을 볼 수 있어요",
+        tr("● 파랑: 루틴·일정 있음  ● 노랑: 메모 있음 · 날짜를 누르면 그 날의 메모와 일정·루틴을 볼 수 있어요"),
         style = MaterialTheme.typography.labelSmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
         modifier = Modifier.padding(top = 6.dp)
@@ -684,7 +685,7 @@ private fun TodayRoutineCard(
                 if (isSchedule) {
                     Icon(
                         Icons.Rounded.Event,
-                        contentDescription = "일정",
+                        contentDescription = tr("일정"),
                         tint = MaterialTheme.colorScheme.onTertiaryContainer,
                         modifier = Modifier.padding(end = 10.dp).size(22.dp)
                     )
@@ -692,7 +693,7 @@ private fun TodayRoutineCard(
                 Column(Modifier.weight(1f)) {
                     Text(routine.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     Text(
-                        if (isSchedule) "${TimeText.display(routine.startTime)} · 일정 (한 번)"
+                        if (isSchedule) tr("{0} · 일정 (한 번)", TimeText.display(routine.startTime))
                         else "${TimeText.display(routine.startTime)} · ${DayMask.label(routine.daysOfWeek)}",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -701,12 +702,12 @@ private fun TodayRoutineCard(
                 when {
                     // 앱 없는 일정: 확인할 앱이 없으니 시각만 기준으로 표시
                     isSchedule && today.apps.isEmpty() ->
-                        if (today.hasStarted) StatusChip("시간 지남", MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant)
-                        else StatusChip("예정", MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.onSurface)
-                    today.isComplete -> StatusChip("완료", Brand.Green.copy(alpha = 0.18f), Brand.Green)
-                    isPast -> StatusChip("미완료", MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer)
-                    today.hasStarted -> StatusChip("진행 중", MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer)
-                    else -> StatusChip("예정", MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (today.hasStarted) StatusChip(tr("시간 지남"), MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant)
+                        else StatusChip(tr("예정"), MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.onSurface)
+                    today.isComplete -> StatusChip(tr("완료"), Brand.Green.copy(alpha = 0.18f), Brand.Green)
+                    isPast -> StatusChip(tr("미완료"), MaterialTheme.colorScheme.errorContainer, MaterialTheme.colorScheme.onErrorContainer)
+                    today.hasStarted -> StatusChip(tr("진행 중"), MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.onPrimaryContainer)
+                    else -> StatusChip(tr("예정"), MaterialTheme.colorScheme.surfaceVariant, MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             routine.message?.takeIf { it.isNotBlank() }?.let { msg ->
@@ -721,7 +722,7 @@ private fun TodayRoutineCard(
             if (today.apps.isEmpty()) {
                 if (isSchedule) return@Column // 일정은 앱 없이 알림·메시지만 받아도 됨
                 Text(
-                    "등록된 앱이 없어요. 눌러서 앱을 추가하세요.",
+                    tr("등록된 앱이 없어요. 눌러서 앱을 추가하세요."),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 8.dp)
@@ -734,7 +735,7 @@ private fun TodayRoutineCard(
                 modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(3.dp))
             )
             Text(
-                "${today.done}/${today.total} 확인",
+                tr("{0}/{1} 확인", today.done, today.total),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 4.dp, bottom = 4.dp)

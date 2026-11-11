@@ -46,6 +46,7 @@ import androidx.compose.material.icons.rounded.NotificationsActive
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import com.routinecheck.app.domain.tr
 
 /** 화면 위에 띄우는 대화상자 종류 */
 private sealed interface ItemDialog {
@@ -82,18 +83,18 @@ fun ChatHeadItemsScreen(
         steps = listOf(
             CoachStep(
                 target = "items.add",
-                title = "항목 추가",
-                body = "챗헤드에 띄울 앱과 웹사이트를 추가하고, 비슷한 것끼리 폴더로 묶을 수 있어요."
+                title = tr("항목 추가"),
+                body = tr("챗헤드에 띄울 앱과 웹사이트를 추가하고, 비슷한 것끼리 폴더로 묶을 수 있어요.")
             ),
             CoachStep(
                 target = "items.badge",
-                title = "알림 배지",
-                body = "켜면 메신저처럼 확인 안 한 알림이 있는 앱에 숫자 배지가 붙어요. 원할 때만 켜면 돼요."
+                title = tr("알림 배지"),
+                body = tr("켜면 메신저처럼 확인 안 한 알림이 있는 앱에 숫자 배지가 붙어요. 원할 때만 켜면 돼요.")
             ),
             CoachStep(
                 target = null,
-                title = "순서 바꾸기",
-                body = "각 항목 오른쪽 ⋮ 메뉴에서 위·아래로 옮기거나, 폴더로 옮기거나, 지울 수 있어요."
+                title = tr("순서 바꾸기"),
+                body = tr("각 항목 오른쪽 ⋮ 메뉴에서 위·아래로 옮기거나, 폴더로 옮기거나, 지울 수 있어요.")
             )
         )
     )
@@ -104,10 +105,10 @@ fun ChatHeadItemsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(state.path.lastOrNull()?.title ?: "챗헤드 항목") },
+                title = { Text(state.path.lastOrNull()?.title ?: tr("챗헤드 항목")) },
                 navigationIcon = {
                     IconButton(onClick = { if (!viewModel.back()) onBack() }) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "뒤로")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = tr("뒤로"))
                     }
                 }
             )
@@ -124,12 +125,12 @@ fun ChatHeadItemsScreen(
                         OutlinedButton(onClick = { viewModel.back() }) {
                             Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("이전으로")
+                            Text(tr("이전으로"))
                         }
                         OutlinedButton(onClick = viewModel::top) {
                             Icon(Icons.Rounded.VerticalAlignTop, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(4.dp))
-                            Text("최상단으로")
+                            Text(tr("최상단으로"))
                         }
                     }
                 }
@@ -141,8 +142,8 @@ fun ChatHeadItemsScreen(
                         modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
                     ) {
                         Text(
-                            "챗헤드를 펼치면 ① 진행 중인 루틴의 앱 ② 폴더 ③ 앱·웹사이트 순서로 보여요.\n" +
-                                "폴더를 누르면 안의 항목이 열리고, 위쪽의 \"이전으로\"·\"최상단으로\"로 돌아올 수 있어요.",
+                            tr("챗헤드를 펼치면 ① 진행 중인 루틴의 앱 ② 폴더 ③ 앱·웹사이트 순서로 보여요.\n") +
+                                tr("폴더를 누르면 안의 항목이 열리고, 위쪽의 \"이전으로\"·\"최상단으로\"로 돌아올 수 있어요."),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.padding(14.dp)
@@ -171,25 +172,25 @@ fun ChatHeadItemsScreen(
                     FilledTonalButton(onClick = { showPicker = true }) {
                         Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("앱 추가")
+                        Text(tr("앱 추가"))
                     }
                     FilledTonalButton(onClick = { dialog = ItemDialog.AddLink }) {
                         Icon(Icons.Rounded.Language, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("웹사이트 추가")
+                        Text(tr("웹사이트 추가"))
                     }
                     FilledTonalButton(onClick = { dialog = ItemDialog.NewFolder }) {
                         Icon(Icons.Rounded.CreateNewFolder, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text("폴더 만들기")
+                        Text(tr("폴더 만들기"))
                     }
                 }
             }
             if (state.loaded && state.isEmpty) {
                 item {
                     Text(
-                        if (state.path.isEmpty()) "아직 등록된 항목이 없어요. 메신저·캘린더 같은 앱이나 자주 가는 웹사이트를 추가하고, 비슷한 것끼리 폴더로 묶어 보세요."
-                        else "빈 폴더예요. 위 버튼으로 앱·웹사이트·하위 폴더를 넣어 보세요.",
+                        if (state.path.isEmpty()) tr("아직 등록된 항목이 없어요. 메신저·캘린더 같은 앱이나 자주 가는 웹사이트를 추가하고, 비슷한 것끼리 폴더로 묶어 보세요.")
+                        else tr("빈 폴더예요. 위 버튼으로 앱·웹사이트·하위 폴더를 넣어 보세요."),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 24.dp)
@@ -199,16 +200,16 @@ fun ChatHeadItemsScreen(
             itemsIndexed(state.folders, key = { _, it -> "f${it.id}" }) { index, folder ->
                 ItemRow(
                     item = folder,
-                    subtitle = "폴더 · ${state.childCounts[folder.id] ?: 0}개",
+                    subtitle = tr("폴더 · {0}개", state.childCounts[folder.id] ?: 0),
                     canUp = index > 0,
                     canDown = index < state.folders.lastIndex,
                     onClick = { viewModel.openFolder(folder.id) },
                     onMove = { viewModel.move(folder.id, it) },
                     menu = listOf(
-                        "열기" to { viewModel.openFolder(folder.id) },
-                        "이름 바꾸기" to { dialog = ItemDialog.RenameFolder(folder) },
-                        "다른 폴더로 옮기기" to { dialog = ItemDialog.Move(folder) },
-                        "삭제" to { dialog = ItemDialog.ConfirmDelete(folder) }
+                        tr("열기") to { viewModel.openFolder(folder.id) },
+                        tr("이름 바꾸기") to { dialog = ItemDialog.RenameFolder(folder) },
+                        tr("다른 폴더로 옮기기") to { dialog = ItemDialog.Move(folder) },
+                        tr("삭제") to { dialog = ItemDialog.ConfirmDelete(folder) }
                     )
                 )
             }
@@ -216,15 +217,15 @@ fun ChatHeadItemsScreen(
                 val isLink = item.kind == ChatHeadKind.LINK
                 ItemRow(
                     item = item,
-                    subtitle = if (isLink) item.url?.let { LinkUtils.hostOf(it) } ?: "웹사이트" else "앱",
+                    subtitle = if (isLink) item.url?.let { LinkUtils.hostOf(it) } ?: tr("웹사이트") else tr("앱"),
                     canUp = index > 0,
                     canDown = index < state.others.lastIndex,
                     onClick = if (isLink) ({ dialog = ItemDialog.EditLink(item) }) else null,
                     onMove = { viewModel.move(item.id, it) },
                     menu = buildList<Pair<String, () -> Unit>> {
-                        if (isLink) add("이름·주소 수정" to { dialog = ItemDialog.EditLink(item) })
-                        add("다른 폴더로 옮기기" to { dialog = ItemDialog.Move(item) })
-                        add("빼기" to { viewModel.delete(item.id); Unit })
+                        if (isLink) add(tr("이름·주소 수정") to { dialog = ItemDialog.EditLink(item) })
+                        add(tr("다른 폴더로 옮기기") to { dialog = ItemDialog.Move(item) })
+                        add(tr("빼기") to { viewModel.delete(item.id); Unit })
                     }
                 )
             }
@@ -233,7 +234,7 @@ fun ChatHeadItemsScreen(
 
     if (showPicker) {
         AppPickerDialog(
-            title = state.path.lastOrNull()?.let { "'${it.title}' 폴더 앱 선택" } ?: "챗헤드 앱 선택",
+            title = state.path.lastOrNull()?.let { tr("'{0}' 폴더 앱 선택", it.title) } ?: tr("챗헤드 앱 선택"),
             initialSelected = state.appsHere,
             onDismiss = { showPicker = false },
             onConfirm = {
@@ -246,27 +247,27 @@ fun ChatHeadItemsScreen(
     when (val d = dialog) {
         null -> Unit
         ItemDialog.AddLink -> LinkDialog(
-            title = "웹사이트 추가",
+            title = tr("웹사이트 추가"),
             initialName = "",
             initialUrl = "",
             onDismiss = { dialog = null },
             onConfirm = { name, url -> viewModel.addLink(name, url).also { if (it == null) dialog = null } }
         )
         is ItemDialog.EditLink -> LinkDialog(
-            title = "웹사이트 수정",
+            title = tr("웹사이트 수정"),
             initialName = d.item.title,
             initialUrl = d.item.url.orEmpty(),
             onDismiss = { dialog = null },
             onConfirm = { name, url -> viewModel.editLink(d.item.id, name, url).also { if (it == null) dialog = null } }
         )
         ItemDialog.NewFolder -> NameDialog(
-            title = "새 폴더",
+            title = tr("새 폴더"),
             initial = "",
             onDismiss = { dialog = null },
             onConfirm = { name -> viewModel.createFolder(name).also { if (it == null) dialog = null } }
         )
         is ItemDialog.RenameFolder -> NameDialog(
-            title = "폴더 이름 바꾸기",
+            title = tr("폴더 이름 바꾸기"),
             initial = d.item.title,
             onDismiss = { dialog = null },
             onConfirm = { name -> viewModel.renameFolder(d.item.id, name).also { if (it == null) dialog = null } }
@@ -275,10 +276,10 @@ fun ChatHeadItemsScreen(
             val destinations = state.destinationsFor(d.item)
             AlertDialog(
                 onDismissRequest = { dialog = null },
-                title = { Text("'${d.item.title}' 옮기기") },
+                title = { Text(tr("'{0}' 옮기기", d.item.title)) },
                 text = {
                     if (destinations.isEmpty()) {
-                        Text("옮길 수 있는 폴더가 없어요. 먼저 폴더를 만들어 주세요.")
+                        Text(tr("옮길 수 있는 폴더가 없어요. 먼저 폴더를 만들어 주세요."))
                     } else {
                         LazyColumn(Modifier.heightIn(max = 360.dp)) {
                             itemsIndexed(destinations, key = { _, it -> it.id ?: -1L }) { _, dest ->
@@ -305,19 +306,19 @@ fun ChatHeadItemsScreen(
                         }
                     }
                 },
-                confirmButton = { TextButton(onClick = { dialog = null }) { Text("닫기") } }
+                confirmButton = { TextButton(onClick = { dialog = null }) { Text(tr("닫기")) } }
             )
         }
         is ItemDialog.ConfirmDelete -> AlertDialog(
             onDismissRequest = { dialog = null },
-            title = { Text("'${d.item.title}' 폴더를 삭제할까요?") },
-            text = { Text("폴더 안의 앱·웹사이트·하위 폴더는 지워지지 않고 한 단계 위로 옮겨져요.") },
+            title = { Text(tr("'{0}' 폴더를 삭제할까요?", d.item.title)) },
+            text = { Text(tr("폴더 안의 앱·웹사이트·하위 폴더는 지워지지 않고 한 단계 위로 옮겨져요.")) },
             confirmButton = {
                 TextButton(onClick = { viewModel.delete(d.item.id); dialog = null }) {
-                    Text("삭제", color = MaterialTheme.colorScheme.error)
+                    Text(tr("삭제"), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { dialog = null }) { Text("취소") } }
+            dismissButton = { TextButton(onClick = { dialog = null }) { Text(tr("취소")) } }
         )
     }
 }
@@ -329,7 +330,7 @@ private fun Breadcrumb(path: List<PinnedItem>, onOpen: (Long?) -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 8.dp)
     ) {
-        Crumb("최상단", current = path.isEmpty()) { onOpen(null) }
+        Crumb(tr("최상단"), current = path.isEmpty()) { onOpen(null) }
         path.forEachIndexed { index, folder ->
             Icon(
                 Icons.AutoMirrored.Rounded.KeyboardArrowRight,
@@ -388,17 +389,17 @@ private fun ItemRow(
             )
         }
         IconButton(onClick = { onMove(-1) }, enabled = canUp) {
-            Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = "앞으로")
+            Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = tr("앞으로"))
         }
         IconButton(onClick = { onMove(1) }, enabled = canDown) {
-            Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = "뒤로")
+            Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = tr("뒤로"))
         }
         Box {
-            IconButton(onClick = { menuOpen = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = "더보기") }
+            IconButton(onClick = { menuOpen = true }) { Icon(Icons.Rounded.MoreVert, contentDescription = tr("더보기")) }
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                 menu.forEach { (label, action) ->
                     DropdownMenuItem(
-                        text = { Text(label, color = if (label == "삭제" || label == "빼기") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface) },
+                        text = { Text(label, color = if (label == tr("삭제") || label == tr("빼기")) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface) },
                         onClick = { menuOpen = false; action() }
                     )
                 }
@@ -427,8 +428,8 @@ private fun LinkDialog(
                 OutlinedTextField(
                     value = url,
                     onValueChange = { url = it; error = null },
-                    label = { Text("주소") },
-                    placeholder = { Text("예) naver.com") },
+                    label = { Text(tr("주소")) },
+                    placeholder = { Text(tr("예) naver.com")) },
                     isError = error != null,
                     supportingText = { error?.let { Text(it) } },
                     singleLine = true,
@@ -438,14 +439,14 @@ private fun LinkDialog(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it.take(30) },
-                    label = { Text("이름 (비우면 주소로)") },
+                    label = { Text(tr("이름 (비우면 주소로)")) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
         },
-        confirmButton = { TextButton(onClick = { error = onConfirm(name, url) }) { Text("저장") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } }
+        confirmButton = { TextButton(onClick = { error = onConfirm(name, url) }) { Text(tr("저장")) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("취소")) } }
     )
 }
 
@@ -460,16 +461,16 @@ private fun NameDialog(title: String, initial: String, onDismiss: () -> Unit, on
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it.take(20); error = null },
-                label = { Text("폴더 이름") },
-                placeholder = { Text("예) 업무, 쇼핑") },
+                label = { Text(tr("폴더 이름")) },
+                placeholder = { Text(tr("예) 업무, 쇼핑")) },
                 isError = error != null,
                 supportingText = { error?.let { Text(it) } },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
         },
-        confirmButton = { TextButton(onClick = { error = onConfirm(name) }) { Text("저장") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("취소") } }
+        confirmButton = { TextButton(onClick = { error = onConfirm(name) }) { Text(tr("저장")) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(tr("취소")) } }
     )
 }
 
@@ -485,15 +486,15 @@ private fun BadgePermissionCard(enabled: Boolean, onEnable: () -> Unit, modifier
             )
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
-                Text(if (enabled) "알림 배지 켜짐" else "알림 배지", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
+                Text(if (enabled) tr("알림 배지 켜짐") else tr("알림 배지"), style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                 Text(
-                    if (enabled) "확인 안 한 알림 수가 챗헤드 항목에 표시돼요"
-                    else "확인 안 한 알림이 있는 앱에 숫자를 붙여 보여줘요 (알림 접근 필요)",
+                    if (enabled) tr("확인 안 한 알림 수가 챗헤드 항목에 표시돼요")
+                    else tr("확인 안 한 알림이 있는 앱에 숫자를 붙여 보여줘요 (알림 접근 필요)"),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            if (!enabled) TextButton(onClick = onEnable) { Text("켜기") }
+            if (!enabled) TextButton(onClick = onEnable) { Text(tr("켜기")) }
         }
     }
 }

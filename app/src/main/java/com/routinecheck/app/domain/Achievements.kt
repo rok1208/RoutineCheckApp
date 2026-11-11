@@ -50,11 +50,11 @@ object Streaks {
 
 /** 확인한 앱 수로 올라가는 레벨 */
 enum class RoutineLevel(val emoji: String, val title: String, val minChecks: Int) {
-    SPROUT("🌱", "루틴 새싹", 0),
-    LEAF("🌿", "꾸준한 새잎", 20),
-    TREE("🌳", "습관 나무", 80),
-    FOREST("🏕️", "루틴 숲", 200),
-    MASTER("🏆", "루틴 마스터", 500);
+    SPROUT("🌱", tr("루틴 새싹"), 0),
+    LEAF("🌿", tr("꾸준한 새잎"), 20),
+    TREE("🌳", tr("습관 나무"), 80),
+    FOREST("🏕️", tr("루틴 숲"), 200),
+    MASTER("🏆", tr("루틴 마스터"), 500);
 
     val next: RoutineLevel? get() = entries.getOrNull(ordinal + 1)
 
@@ -95,14 +95,14 @@ enum class AchievementBadge(
     val metric: BadgeMetric,
     val target: Int
 ) {
-    FIRST_CHECK("🎯", "첫 체크", "루틴 앱을 처음 확인했어요", BadgeMetric.CHECKS, 1),
-    FIRST_PERFECT("✨", "완벽한 하루", "하루 루틴을 처음으로 모두 끝냈어요", BadgeMetric.PERFECT_DAYS, 1),
-    STREAK_3("🔥", "3일 연속", "3일 연속으로 루틴을 모두 끝냈어요", BadgeMetric.BEST_STREAK, 3),
-    STREAK_7("⚡", "일주일 연속", "7일 연속으로 루틴을 모두 끝냈어요", BadgeMetric.BEST_STREAK, 7),
-    PERFECT_10("🌟", "완벽한 날 10일", "루틴을 모두 끝낸 날이 10일이 됐어요", BadgeMetric.PERFECT_DAYS, 10),
-    STREAK_14("💪", "2주 연속", "14일 연속으로 루틴을 모두 끝냈어요", BadgeMetric.BEST_STREAK, 14),
-    CHECKS_100("💯", "확인 100번", "루틴 앱을 100번 확인했어요", BadgeMetric.CHECKS, 100),
-    STREAK_30("👑", "한 달 연속", "30일 연속으로 루틴을 모두 끝냈어요", BadgeMetric.BEST_STREAK, 30);
+    FIRST_CHECK("🎯", tr("첫 체크"), tr("루틴 앱을 처음 확인했어요"), BadgeMetric.CHECKS, 1),
+    FIRST_PERFECT("✨", tr("완벽한 하루"), tr("하루 루틴을 처음으로 모두 끝냈어요"), BadgeMetric.PERFECT_DAYS, 1),
+    STREAK_3("🔥", tr("3일 연속"), tr("3일 연속으로 루틴을 모두 끝냈어요"), BadgeMetric.BEST_STREAK, 3),
+    STREAK_7("⚡", tr("일주일 연속"), tr("7일 연속으로 루틴을 모두 끝냈어요"), BadgeMetric.BEST_STREAK, 7),
+    PERFECT_10("🌟", tr("완벽한 날 10일"), tr("루틴을 모두 끝낸 날이 10일이 됐어요"), BadgeMetric.PERFECT_DAYS, 10),
+    STREAK_14("💪", tr("2주 연속"), tr("14일 연속으로 루틴을 모두 끝냈어요"), BadgeMetric.BEST_STREAK, 14),
+    CHECKS_100("💯", tr("확인 100번"), tr("루틴 앱을 100번 확인했어요"), BadgeMetric.CHECKS, 100),
+    STREAK_30("👑", tr("한 달 연속"), tr("30일 연속으로 루틴을 모두 끝냈어요"), BadgeMetric.BEST_STREAK, 30);
 
     fun isMet(m: AchievementMetrics): Boolean = m.valueOf(metric) >= target
 
@@ -123,44 +123,44 @@ object CheerMessages {
      */
     fun of(todayTotal: Int, todayDone: Int, streak: Int, best: Int, hasAnyRoutine: Boolean): Cheer {
         if (!hasAnyRoutine) {
-            return Cheer("첫 루틴을 만들어 볼까요?", "루틴에 앱을 등록하고 챗헤드에서 열면 여기에 기록이 쌓여요.")
+            return Cheer(tr("첫 루틴을 만들어 볼까요?"), tr("루틴에 앱을 등록하고 챗헤드에서 열면 여기에 기록이 쌓여요."))
         }
         if (todayTotal == 0) {
             return Cheer(
-                "오늘은 쉬는 날이에요 ☕",
-                if (streak > 0) "연속 ${streak}일 기록은 그대로 이어져요." else "다음 루틴에서 새 기록을 시작해 봐요."
+                tr("오늘은 쉬는 날이에요 ☕"),
+                if (streak > 0) tr("연속 {0}일 기록은 그대로 이어져요.", streak) else tr("다음 루틴에서 새 기록을 시작해 봐요.")
             )
         }
         val remaining = todayTotal - todayDone
         if (remaining <= 0) {
             val detail = when {
-                streak >= 3 && streak >= best -> "${streak}일 연속, 최고 기록을 쓰는 중이에요!"
-                streak >= 2 -> "${streak}일 연속으로 루틴을 모두 끝냈어요."
-                else -> "이 기세로 내일도 이어가 봐요."
+                streak >= 3 && streak >= best -> tr("{0}일 연속, 최고 기록을 쓰는 중이에요!", streak)
+                streak >= 2 -> tr("{0}일 연속으로 루틴을 모두 끝냈어요.", streak)
+                else -> tr("이 기세로 내일도 이어가 봐요.")
             }
-            return Cheer("오늘 루틴을 모두 끝냈어요! 🎉", detail)
+            return Cheer(tr("오늘 루틴을 모두 끝냈어요! 🎉"), detail)
         }
         val headline = when {
-            todayDone == 0 -> "오늘 루틴, 시작해 볼까요?"
-            todayDone * 2 >= todayTotal -> "거의 다 왔어요! ${remaining}개만 더"
-            else -> "좋은 출발이에요, ${remaining}개 남았어요"
+            todayDone == 0 -> tr("오늘 루틴, 시작해 볼까요?")
+            todayDone * 2 >= todayTotal -> tr("거의 다 왔어요! {0}개만 더", remaining)
+            else -> tr("좋은 출발이에요, {0}개 남았어요", remaining)
         }
         val detail = when {
-            streak > 0 && streak + 1 > best -> "오늘 끝내면 연속 ${streak + 1}일로 최고 기록을 넘어요 🔥"
-            streak > 0 -> "오늘 끝내면 연속 ${streak + 1}일이 돼요 🔥"
-            else -> "오늘 모두 끝내면 연속 기록이 시작돼요."
+            streak > 0 && streak + 1 > best -> tr("오늘 끝내면 연속 {0}일로 최고 기록을 넘어요 🔥", streak + 1)
+            streak > 0 -> tr("오늘 끝내면 연속 {0}일이 돼요 🔥", streak + 1)
+            else -> tr("오늘 모두 끝내면 연속 기록이 시작돼요.")
         }
         return Cheer(headline, detail)
     }
 
     /** 루틴별 완료율에 붙이는 짧은 평가 */
     fun forRate(rate: Float, total: Int): String = when {
-        total == 0 -> "아직 기록이 없어요"
-        rate >= 1f -> "완벽해요"
-        rate >= 0.8f -> "아주 잘하고 있어요"
-        rate >= 0.5f -> "절반 넘게 지켰어요"
-        rate > 0f -> "조금씩 늘려 봐요"
-        else -> "오늘부터 시작해 봐요"
+        total == 0 -> tr("아직 기록이 없어요")
+        rate >= 1f -> tr("완벽해요")
+        rate >= 0.8f -> tr("아주 잘하고 있어요")
+        rate >= 0.5f -> tr("절반 넘게 지켰어요")
+        rate > 0f -> tr("조금씩 늘려 봐요")
+        else -> tr("오늘부터 시작해 봐요")
     }
 }
 

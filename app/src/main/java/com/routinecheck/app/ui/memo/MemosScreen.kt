@@ -30,6 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.routinecheck.app.domain.DayMask
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
+import com.routinecheck.app.domain.tr
 
 private val Paper = Color(0xFFFFF4C9)
 private val Ink = Color(0xFF3B3320)
@@ -51,10 +52,10 @@ fun MemosScreen(
             TopAppBar(
                 title = {
                     Column {
-                        Text("전체 메모")
+                        Text(tr("전체 메모"))
                         if (state.loaded) {
                             Text(
-                                "${state.total}개",
+                                tr("{0}개", state.total),
                                 style = MaterialTheme.typography.labelMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -63,7 +64,7 @@ fun MemosScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = { viewModel.stopEdit(); onBack() }) {
-                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "뒤로")
+                        Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = tr("뒤로"))
                     }
                 }
             )
@@ -78,11 +79,11 @@ fun MemosScreen(
                 OutlinedTextField(
                     value = state.query,
                     onValueChange = viewModel::setQuery,
-                    placeholder = { Text("메모 내용 검색") },
+                    placeholder = { Text(tr("메모 내용 검색")) },
                     leadingIcon = { Icon(Icons.Rounded.Search, contentDescription = null) },
                     trailingIcon = {
                         if (state.query.isNotEmpty()) {
-                            IconButton(onClick = { viewModel.setQuery("") }) { Icon(Icons.Rounded.Close, contentDescription = "검색어 지우기") }
+                            IconButton(onClick = { viewModel.setQuery("") }) { Icon(Icons.Rounded.Close, contentDescription = tr("검색어 지우기")) }
                         }
                     },
                     singleLine = true,
@@ -94,8 +95,8 @@ fun MemosScreen(
             if (state.loaded && state.items.isEmpty()) {
                 item(key = "empty") {
                     Text(
-                        if (state.query.isBlank()) "아직 작성한 메모가 없어요. 홈의 주간 달력에서 날짜를 눌러 메모를 남겨 보세요."
-                        else "'${state.query.trim()}'이(가) 들어간 메모가 없어요.",
+                        if (state.query.isBlank()) tr("아직 작성한 메모가 없어요. 홈의 주간 달력에서 날짜를 눌러 메모를 남겨 보세요.")
+                        else tr("'{0}'이(가) 들어간 메모가 없어요.", state.query.trim()),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(vertical = 32.dp)
@@ -107,7 +108,7 @@ fun MemosScreen(
             state.items.groupBy { it.date.year to it.date.monthValue }.forEach { (ym, monthItems) ->
                 item(key = "h-${ym.first}-${ym.second}") {
                     Text(
-                        "${ym.first}년 ${ym.second}월",
+                        tr("{0}년 {1}월", ym.first, ym.second),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,
@@ -136,14 +137,14 @@ fun MemosScreen(
     confirmDelete?.let { item ->
         AlertDialog(
             onDismissRequest = { confirmDelete = null },
-            title = { Text("${dateLabel(item.date)} 메모를 삭제할까요?") },
-            text = { Text("삭제한 메모는 되돌릴 수 없어요.") },
+            title = { Text(tr("{0} 메모를 삭제할까요?", dateLabel(item.date))) },
+            text = { Text(tr("삭제한 메모는 되돌릴 수 없어요.")) },
             confirmButton = {
                 TextButton(onClick = { viewModel.delete(item.date); confirmDelete = null }) {
-                    Text("삭제", color = MaterialTheme.colorScheme.error)
+                    Text(tr("삭제"), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text("취소") } }
+            dismissButton = { TextButton(onClick = { confirmDelete = null }) { Text(tr("취소")) } }
         )
     }
 }
@@ -184,10 +185,10 @@ private fun MemoCard(
                 }
                 Spacer(Modifier.weight(1f))
                 IconButton(onClick = onOpenInHome) {
-                    Icon(Icons.Rounded.CalendarMonth, contentDescription = "홈에서 이 날짜 보기", tint = Ink)
+                    Icon(Icons.Rounded.CalendarMonth, contentDescription = tr("홈에서 이 날짜 보기"), tint = Ink)
                 }
                 IconButton(onClick = onDelete) {
-                    Icon(Icons.Rounded.Delete, contentDescription = "메모 삭제", tint = Ink.copy(alpha = 0.7f))
+                    Icon(Icons.Rounded.Delete, contentDescription = tr("메모 삭제"), tint = Ink.copy(alpha = 0.7f))
                 }
             }
 
@@ -220,7 +221,7 @@ private fun MemoCard(
                         Box {
                             if (editing.text.isEmpty()) {
                                 Text(
-                                    "내용을 모두 지우면 이 메모는 삭제돼요",
+                                    tr("내용을 모두 지우면 이 메모는 삭제돼요"),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = Ink.copy(alpha = 0.4f)
                                 )
@@ -231,12 +232,12 @@ private fun MemoCard(
                 )
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(end = 8.dp)) {
                     Text(
-                        if (editing.saved) "저장됨" else "저장 중…",
+                        if (editing.saved) tr("저장됨") else tr("저장 중…"),
                         style = MaterialTheme.typography.labelSmall,
                         color = Ink.copy(alpha = 0.6f),
                         modifier = Modifier.weight(1f)
                     )
-                    TextButton(onClick = onDone) { Text("완료", color = Ink) }
+                    TextButton(onClick = onDone) { Text(tr("완료"), color = Ink) }
                 }
             }
         }
@@ -245,17 +246,17 @@ private fun MemoCard(
 
 /** "10월 9일 (금)" */
 private fun dateLabel(date: LocalDate): String =
-    "${date.monthValue}월 ${date.dayOfMonth}일 (${DayMask.shortName(date.dayOfWeek)})"
+    tr("{0}월 {1}일 ({2})", date.monthValue, date.dayOfMonth, DayMask.shortName(date.dayOfWeek))
 
 /** 오늘 · 어제 · 내일 · N일 전 · N일 뒤 (2주 넘게 차이 나면 표시 안 함) */
 private fun relativeLabel(date: LocalDate): String? {
     val diff = ChronoUnit.DAYS.between(LocalDate.now(), date)
     return when {
-        diff == 0L -> "오늘"
-        diff == -1L -> "어제"
-        diff == 1L -> "내일"
-        diff in -14L..-2L -> "${-diff}일 전"
-        diff in 2L..14L -> "${diff}일 뒤"
+        diff == 0L -> tr("오늘")
+        diff == -1L -> tr("어제")
+        diff == 1L -> tr("내일")
+        diff in -14L..-2L -> tr("{0}일 전", -diff)
+        diff in 2L..14L -> tr("{0}일 뒤", diff)
         else -> null
     }
 }

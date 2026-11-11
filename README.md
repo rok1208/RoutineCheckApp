@@ -1,4 +1,4 @@
-# 루틴 체크 어플 (v0.7.0)
+# 루틴 체크 어플 (v0.8.0)
 
 안드로이드의 앱 접근 방식이 비효율적이라는 문제의식에서 시작한 앱입니다.
 **화면 위 챗헤드 하나로 주요 앱·웹사이트를 바로 열고 확인**하는 것이 핵심이고,
@@ -103,3 +103,24 @@ app/src/main/java/com/routinecheck/app/
 - 번들: Build → Generate Signed App Bundle → `app-release.aab`
 - R8 축소 · 리소스 축소 켜짐. 릴리스 빌드로 전 기능 한 번 확인, `app/build/outputs/mapping/release/mapping.txt`는 플레이 콘솔에 업로드
 - 오픈소스 고지: 설정 → 앱 정보 → 오픈소스 라이선스
+
+## v0.7.1 보안 · 안정성 점검 반영
+
+- 챗헤드 웹사이트: http·https 주소만 등록·열기 허용 (file:// 등 다른 형식으로 서비스가 종료되던 문제 방지), 열기 실패 시에도 챗헤드 유지
+- 잠금 화면 보호: 화면 잠금(PIN·패턴·지문)이 걸린 상태에서는 루틴 알림·메시지 창에 이름·메시지를 숨기고 시각만 표시, 잠금 해제 후 전체 내용
+- 백업 범위 명시 (`res/xml/data_extraction_rules.xml`, `backup_rules.xml`)
+- 릴리스 빌드에서 디버그 로그 제거 (R8 규칙)
+- 오픈소스 라이선스 목록에 javax.inject · Guava ListenableFuture · JetBrains Annotations 추가
+- 개인정보처리방침: `docs/privacy-policy.html` (GitHub Pages: Settings → Pages → Branch `main` / 폴더 `/docs`)
+  → 공개 주소 `https://rok1208.github.io/RoutineCheckApp/privacy-policy.html`
+
+## v0.8.0 영어 지원 · 챗헤드 기본값
+
+- **언어 선택**: 설정 → 언어 · Language → 휴대폰 언어 따르기 / 한국어 / English (바꾸면 앱이 다시 시작됨)
+  - "휴대폰 언어 따르기": 휴대폰이 한국어면 한국어, 그 밖의 언어면 영어
+  - 홈 화면 앱 이름은 휴대폰 언어를 따름 (`values/` 영어, `values-ko/` 한국어)
+- **번역 방식**: 코드의 한국어 문구를 `tr("한국어 문구")`로 감싸고, 영어는 `domain/EnStrings.kt` 사전에서 찾음 (`domain/I18n.kt`)
+  - 자리표시자 `{0}`, 영어 월 `{0:mon}`, 단수·복수 `{0:day|days}`
+  - 같은 한국어가 다른 뜻일 때는 `tr2("월", "Mon")`
+  - 새 문구를 넣을 때는 `tr("...")`로 감싸고 `EnStrings.kt`에 영어를 추가 (빠지면 한국어로 표시됨)
+- **챗헤드 기본값**: 처음 설치하면 챗헤드가 꺼진 상태로 시작 (홈의 챗헤드 카드나 설정에서 켬). 이미 쓰던 사용자는 기존 설정 유지

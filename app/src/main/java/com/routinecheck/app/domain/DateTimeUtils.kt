@@ -18,9 +18,10 @@ object TimeText {
     /** "07:00" → "오전 7:00" */
     fun display(text: String): String {
         val t = parse(text)
-        val ampm = if (t.hour < 12) "오전" else "오후"
+        val ampm = if (t.hour < 12) tr("오전") else tr("오후")
         val h = when (val h12 = t.hour % 12) { 0 -> 12; else -> h12 }
-        return "%s %d:%02d".format(ampm, h, t.minute)
+        // 한국어 "오전 7:00", 영어 "7:00 AM"
+        return tr2("{0} {1}:{2}", "{1}:{2} {0}", ampm, h, "%02d".format(t.minute))
     }
 }
 

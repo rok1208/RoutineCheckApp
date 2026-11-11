@@ -43,6 +43,10 @@ import com.routinecheck.app.ui.common.SectionHeader
 import com.routinecheck.app.ui.common.enableChatHead
 import com.routinecheck.app.ui.common.rememberPermissionRequester
 import androidx.compose.material.icons.rounded.School
+import com.routinecheck.app.domain.tr
+import android.app.Activity
+import com.routinecheck.app.domain.AppLanguage
+import com.routinecheck.app.system.LanguageSettings
 
 /** ⑦ 챗헤드 설정 + 권한 상태 */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,9 +73,9 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("설정") },
+                title = { Text(tr("설정")) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "뒤로") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = tr("뒤로")) }
                 }
             )
         }
@@ -86,8 +90,8 @@ fun SettingsScreen(
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                 Column(Modifier.weight(1f)) {
-                    Text("챗헤드 사용", style = MaterialTheme.typography.titleMedium)
-                    Text("끄면 화면에서 사라지고, 재부팅 후에도 다시 뜨지 않아요", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(tr("챗헤드 사용"), style = MaterialTheme.typography.titleMedium)
+                    Text(tr("끄면 화면에서 사라지고, 재부팅 후에도 다시 뜨지 않아요"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Switch(
                     checked = s.enabled,
@@ -98,7 +102,7 @@ fun SettingsScreen(
                 )
             }
 
-            SectionHeader("펼침 방식")
+            SectionHeader(tr("펼침 방식"))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ChatHeadStyle.values().forEach { style ->
                     StyleCard(
@@ -110,12 +114,12 @@ fun SettingsScreen(
                 }
             }
 
-            SectionHeader("챗헤드 모양")
+            SectionHeader(tr("챗헤드 모양"))
             Row(verticalAlignment = Alignment.CenterVertically) {
                 ChatHeadPreview(s.iconUri, 56.dp, opacity = s.opacity)
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("투명도 ${(s.opacity * 100).toInt()}%", style = MaterialTheme.typography.bodyMedium)
+                    Text(tr("투명도 {0}%", (s.opacity * 100).toInt()), style = MaterialTheme.typography.bodyMedium)
                     var sliderValue by remember(s.opacity) { mutableFloatStateOf(s.opacity) }
                     Slider(
                         value = sliderValue,
@@ -128,11 +132,11 @@ fun SettingsScreen(
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = {
                     pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-                }) { Text("이미지 변경") }
-                if (s.iconUri != null) TextButton(onClick = { viewModel.resetIcon() }) { Text("기본 아이콘으로") }
+                }) { Text(tr("이미지 변경")) }
+                if (s.iconUri != null) TextButton(onClick = { viewModel.resetIcon() }) { Text(tr("기본 아이콘으로")) }
             }
 
-            SectionHeader("가장자리 바 위치")
+            SectionHeader(tr("가장자리 바 위치"))
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 EdgeSide.values().forEachIndexed { index, side ->
                     SegmentedButton(
@@ -143,13 +147,13 @@ fun SettingsScreen(
                 }
             }
             Text(
-                "챗헤드를 화면 끝까지 밀면 얇은 바로 줄어들고, 바를 화면 안쪽으로 밀면 다시 원이 돼요.",
+                tr("챗헤드를 화면 끝까지 밀면 얇은 바로 줄어들고, 바를 화면 안쪽으로 밀면 다시 원이 돼요."),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 6.dp)
             )
 
-            SectionHeader("루틴을 모두 확인했을 때")
+            SectionHeader(tr("루틴을 모두 확인했을 때"))
             OnCompleteBehavior.values().forEach { behavior ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -164,15 +168,15 @@ fun SettingsScreen(
                 }
             }
 
-            SectionHeader("챗헤드 항목")
+            SectionHeader(tr("챗헤드 항목"))
             OutlinedCard(onClick = onManageChatHeadItems, modifier = Modifier.fillMaxWidth()) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("앱 · 웹사이트 · 폴더 관리", modifier = Modifier.weight(1f))
+                    Text(tr("앱 · 웹사이트 · 폴더 관리"), modifier = Modifier.weight(1f))
                     Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null)
                 }
             }
 
-            SectionHeader("루틴 알림 방식")
+            SectionHeader(tr("루틴 알림 방식"))
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 AlertMode.values().forEachIndexed { index, mode ->
                     SegmentedButton(
@@ -183,14 +187,14 @@ fun SettingsScreen(
                 }
             }
             Text(
-                "루틴 시작 시각에 울리는 알림의 방식이에요. 알림을 받을지는 루틴마다 \"시작 알림\"에서 고를 수 있고, " +
-                    "휴대폰이 무음·진동 모드면 휴대폰 설정이 먼저 적용돼요.",
+                tr("루틴 시작 시각에 울리는 알림의 방식이에요. 알림을 받을지는 루틴마다 \"시작 알림\"에서 고를 수 있고, ") +
+                    tr("휴대폰이 무음·진동 모드면 휴대폰 설정이 먼저 적용돼요."),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(top = 6.dp)
             )
 
-            SectionHeader("가이드")
+            SectionHeader(tr("가이드"))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -201,9 +205,9 @@ fun SettingsScreen(
                 Icon(Icons.Rounded.School, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
-                    Text("가이드 다시 보기", style = MaterialTheme.typography.bodyLarge)
+                    Text(tr("가이드 다시 보기"), style = MaterialTheme.typography.bodyLarge)
                     Text(
-                        "홈·루틴·통계 등 각 화면을 처음 열 때 나오는 기능 설명을 다시 보여드려요",
+                        tr("홈·루틴·통계 등 각 화면을 처음 열 때 나오는 기능 설명을 다시 보여드려요"),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -211,9 +215,9 @@ fun SettingsScreen(
                 Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null)
             }
 
-            SectionHeader("권한")
+            SectionHeader(tr("권한"))
             Text(
-                "꼭 필요한 권한은 '다른 앱 위에 표시' 하나예요. 나머지는 그 기능을 쓸 때 물어보고, 여기서 언제든 바꿀 수 있어요.",
+                tr("꼭 필요한 권한은 '다른 앱 위에 표시' 하나예요. 나머지는 그 기능을 쓸 때 물어보고, 여기서 언제든 바꿀 수 있어요."),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 4.dp)
@@ -237,14 +241,49 @@ fun SettingsScreen(
                     )
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
-                        Text(item.title + if (item.required) " (필수)" else " (권장)", style = MaterialTheme.typography.bodyLarge)
+                        Text(item.title + if (item.required) tr(" (필수)") else tr(" (권장)"), style = MaterialTheme.typography.bodyLarge)
                         Text(item.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
-                    Text(if (item.granted) "허용됨" else "설정", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                    Text(if (item.granted) tr("허용됨") else tr("설정"), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
                 }
             }
 
-            SectionHeader("앱 정보")
+            // v0.8.0: 언어 선택 — 바꾸면 앱이 다시 시작됨
+            SectionHeader(tr("언어 · Language"))
+            val currentLanguage = remember { LanguageSettings.get(context) }
+            var pendingLanguage by remember { mutableStateOf<AppLanguage?>(null) }
+            AppLanguage.entries.forEach { lang ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .selectable(
+                            selected = lang == currentLanguage,
+                            onClick = { if (lang != currentLanguage) pendingLanguage = lang }
+                        )
+                        .padding(vertical = 4.dp)
+                ) {
+                    RadioButton(selected = lang == currentLanguage, onClick = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(languageName(lang), style = MaterialTheme.typography.bodyLarge)
+                }
+            }
+            pendingLanguage?.let { lang ->
+                AlertDialog(
+                    onDismissRequest = { pendingLanguage = null },
+                    title = { Text(languageName(lang)) },
+                    text = { Text(tr("언어를 바꾸면 앱이 다시 시작돼요. 켜 둔 챗헤드는 앱이 열리면 다시 떠요.")) },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            pendingLanguage = null
+                            (context as? Activity)?.let { LanguageSettings.change(it, lang) }
+                        }) { Text(tr("다시 시작")) }
+                    },
+                    dismissButton = { TextButton(onClick = { pendingLanguage = null }) { Text(tr("취소")) } }
+                )
+            }
+
+            SectionHeader(tr("앱 정보"))
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -252,12 +291,12 @@ fun SettingsScreen(
                     .clickable(onClick = onOpenLicenses)
                     .padding(vertical = 8.dp)
             ) {
-                Text("오픈소스 라이선스", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
+                Text(tr("오픈소스 라이선스"), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
                 Icon(Icons.AutoMirrored.Rounded.KeyboardArrowRight, contentDescription = null)
             }
 
             Text(
-                "루틴 체크 v${BuildConfig.VERSION_NAME}",
+                tr("루틴 체크 v{0}", BuildConfig.VERSION_NAME),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(vertical = 24.dp)
@@ -330,4 +369,11 @@ private fun ContainerSketch() {
         Spacer(Modifier.width(4.dp))
         Box(Modifier.size(18.dp).background(Brand.Blue, CircleShape))
     }
+}
+
+/** 언어 이름: 각 언어는 그 언어로 표시 (어떤 언어로 설정돼 있어도 찾을 수 있게) */
+private fun languageName(lang: AppLanguage): String = when (lang) {
+    AppLanguage.SYSTEM -> tr("휴대폰 언어 따르기")
+    AppLanguage.KOREAN -> "한국어"
+    AppLanguage.ENGLISH -> "English"
 }

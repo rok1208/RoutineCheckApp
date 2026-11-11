@@ -35,6 +35,7 @@ import com.routinecheck.app.chathead.ChatHeadIconStore
 import com.routinecheck.app.ui.Brand
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import com.routinecheck.app.domain.tr
 
 @Composable
 fun SectionHeader(title: String, modifier: Modifier = Modifier, trailing: @Composable (() -> Unit)? = null) {
@@ -63,9 +64,9 @@ fun ChatHeadPreview(iconUri: String?, size: Dp, opacity: Float = 1f, modifier: M
     ) {
         val image = bitmap
         if (image != null) {
-            Image(image, contentDescription = "챗헤드", contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
+            Image(image, contentDescription = tr("챗헤드"), contentScale = ContentScale.Crop, modifier = Modifier.fillMaxSize())
         } else {
-            Icon(Icons.Rounded.Apps, contentDescription = "챗헤드", tint = Color.White, modifier = Modifier.size(size * 0.5f))
+            Icon(Icons.Rounded.Apps, contentDescription = tr("챗헤드"), tint = Color.White, modifier = Modifier.size(size * 0.5f))
         }
     }
 }
