@@ -55,6 +55,7 @@ import com.routinecheck.app.domain.ChatHeadEntry
 import com.routinecheck.app.domain.ChatHeadKind
 import com.routinecheck.app.domain.ChatHeadOrdering
 import com.routinecheck.app.domain.DateKey
+import com.routinecheck.app.domain.LinkUtils
 import com.routinecheck.app.system.NotificationChannels
 import com.routinecheck.app.ui.Routes
 import com.routinecheck.app.ui.RoutineCheckTheme
@@ -503,11 +504,23 @@ class ChatHeadService : LifecycleService(), SavedStateRegistryOwner {
     /** 웹사이트: 기본 브라우저(또는 그 주소를 여는 앱)로 열기 */
     private fun openLink(entry: ChatHeadEntry) {
         val url = entry.url ?: return
+        // v0.7.1: 예전 버전에서 저장된 항목도 있으니 열기 직전에 한 번 더 웹 주소인지 확인
+        if (!LinkUtils.isWebUrl(url)) {
+            Toast.makeText(this, "http 또는 https 웹 주소만 열 수 있어요. 항목을 수정해 주세요", Toast.LENGTH_SHORT).show()
+            return
+        }
         try {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+            startActivity(
+                Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                    .addCategory(Intent.CATEGORY_BROWSABLE)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
             collapse()
         } catch (e: ActivityNotFoundException) {
             Toast.makeText(this, "이 주소를 열 수 있는 앱이 없어요", Toast.LENGTH_SHORT).show()
+        } catch (e: RuntimeException) {
+            // 어떤 이유로든 열기에 실패해도 챗헤드 서비스는 계속 동작하도록
+            Toast.makeText(this, "이 주소를 열 수 없어요", Toast.LENGTH_SHORT).show()
         }
     }
 

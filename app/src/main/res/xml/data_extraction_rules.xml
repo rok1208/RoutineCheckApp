@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android 12+ 백업 범위 (v0.7.1)
+    사용자가 휴대폰의 Google 백업을 켰거나 새 기기로 옮길 때, 아래 앱 데이터만 함께 옮겨집니다.
+    루틴·일정·메모·체크 기록(DB), 설정(SharedPreferences), 사용자가 고른 챗헤드 이미지.
+    개발자 서버로는 아무것도 보내지 않으며, 백업은 안드로이드/Google 백업 기능이 처리합니다.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="database" path="." />
+        <include domain="sharedpref" path="." />
+        <include domain="file" path="chathead_icon.png" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="database" path="." />
+        <include domain="sharedpref" path="." />
+        <include domain="file" path="chathead_icon.png" />
+    </device-transfer>
+</data-extraction-rules>

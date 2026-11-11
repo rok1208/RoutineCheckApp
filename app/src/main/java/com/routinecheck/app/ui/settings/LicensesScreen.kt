@@ -45,7 +45,11 @@ private val LIBRARIES = listOf(
     OssLibrary("Dagger · Hilt", "The Dagger Authors", "https://dagger.dev/hilt"),
     OssLibrary("AndroidX Hilt Navigation Compose", "The Android Open Source Project", "https://developer.android.com/jetpack/androidx/releases/hilt"),
     OssLibrary("Kotlin Standard Library", "JetBrains s.r.o. and Kotlin Programming Language contributors", "https://kotlinlang.org"),
-    OssLibrary("kotlinx.coroutines", "JetBrains s.r.o.", "https://github.com/Kotlin/kotlinx.coroutines")
+    OssLibrary("kotlinx.coroutines", "JetBrains s.r.o.", "https://github.com/Kotlin/kotlinx.coroutines"),
+    // v0.7.1: Hilt · Kotlin 이 함께 가져오는 라이브러리
+    OssLibrary("javax.inject (JSR-330)", "The JSR-330 Expert Group", "https://github.com/javax-inject/javax-inject"),
+    OssLibrary("Guava ListenableFuture", "The Guava Authors", "https://github.com/google/guava"),
+    OssLibrary("JetBrains Java Annotations", "JetBrains s.r.o.", "https://github.com/JetBrains/java-annotations")
 )
 
 /** 설정 → 오픈소스 라이선스 (v0.7.0, Apache-2.0 고지 의무) */
