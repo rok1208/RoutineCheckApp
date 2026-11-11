@@ -39,6 +39,7 @@ import com.routinecheck.app.ui.settings.LicensesScreen
 import com.routinecheck.app.ui.settings.SettingsScreen
 import com.routinecheck.app.ui.stats.StatsScreen
 import java.time.LocalDate
+import com.routinecheck.app.domain.tr
 
 object Routes {
     const val HOME = "home"
@@ -62,9 +63,9 @@ private const val KEY_OPEN_MEMO_DATE = "openMemoDate"
 private data class Tab(val route: String, val label: String, val icon: ImageVector)
 
 private val TABS = listOf(
-    Tab(Routes.HOME, "홈", Icons.Rounded.Home),
-    Tab(Routes.ROUTINES, "루틴", Icons.Rounded.Alarm),
-    Tab(Routes.STATS, "통계", Icons.Rounded.BarChart)
+    Tab(Routes.HOME, tr("홈"), Icons.Rounded.Home),
+    Tab(Routes.ROUTINES, tr("루틴"), Icons.Rounded.Alarm),
+    Tab(Routes.STATS, tr("통계"), Icons.Rounded.BarChart)
 )
 
 @Composable

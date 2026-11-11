@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.routinecheck.app.R
+import com.routinecheck.app.domain.tr
 
 /** 앱에 포함된 오픈소스 라이브러리 (모두 Apache License 2.0) */
 private data class OssLibrary(val name: String, val owner: String, val url: String)
@@ -67,9 +68,9 @@ fun LicensesScreen(onBack: () -> Unit) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("오픈소스 라이선스") },
+                title = { Text(tr("오픈소스 라이선스")) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "뒤로") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = tr("뒤로")) }
                 }
             )
         }
@@ -82,7 +83,7 @@ fun LicensesScreen(onBack: () -> Unit) {
         ) {
             item {
                 Text(
-                    "루틴 체크는 아래 오픈소스 소프트웨어를 사용합니다. 모두 Apache License 2.0을 따릅니다.",
+                    tr("루틴 체크는 아래 오픈소스 소프트웨어를 사용합니다. 모두 Apache License 2.0을 따릅니다."),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 12.dp)
@@ -105,7 +106,7 @@ fun LicensesScreen(onBack: () -> Unit) {
                         .clickable { showFullText = !showFullText }
                         .padding(vertical = 16.dp)
                 ) {
-                    Text("Apache License 2.0 전문", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    Text(tr("Apache License 2.0 전문"), style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
                     Icon(if (showFullText) Icons.Rounded.ExpandLess else Icons.Rounded.ExpandMore, contentDescription = null)
                 }
             }

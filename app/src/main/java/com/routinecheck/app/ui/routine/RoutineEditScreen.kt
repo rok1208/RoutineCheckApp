@@ -35,6 +35,8 @@ import com.routinecheck.app.ui.common.AppPickerDialog
 import com.routinecheck.app.ui.common.DateInput
 import com.routinecheck.app.ui.common.SectionHeader
 import com.routinecheck.app.ui.common.TimeInput
+import com.routinecheck.app.domain.tr
+import com.routinecheck.app.domain.tr2
 
 /**
  * ⑧ 루틴 만들기/수정: 이름, 메시지, 시각(직접 입력), 반복 요일, 등록 앱, 시작 알림(선택)·스누즈, 챗헤드 자동 펼침
@@ -49,7 +51,7 @@ fun RoutineEditScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val kind = if (state.isSchedule) "일정" else "루틴"
+    val kind = if (state.isSchedule) tr2("일정", "schedule") else tr2("루틴", "routine")
     var showAppPicker by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     val permissionRequester = rememberPermissionRequester()
@@ -65,8 +67,8 @@ fun RoutineEditScreen(
             permissionRequester.request(
                 needs,
                 reasons = mapOf(
-                    AppPermission.NOTIFICATION to "$kind 시각에 알림을 보내려면 알림 권한이 필요해요. 허용하지 않아도 ${kind}은 저장돼요.",
-                    AppPermission.EXACT_ALARM to "허용하면 $kind 시각에 정확히 알려드려요. 허용하지 않으면 몇 분 늦게 울릴 수 있어요."
+                    AppPermission.NOTIFICATION to tr("{0} 시각에 알림을 보내려면 알림 권한이 필요해요. 허용하지 않아도 {1}은 저장돼요.", kind, kind),
+                    AppPermission.EXACT_ALARM to tr("허용하면 {0} 시각에 정확히 알려드려요. 허용하지 않으면 몇 분 늦게 울릴 수 있어요.", kind)
                 )
             ) { viewModel.save() }
         }
@@ -90,15 +92,15 @@ fun RoutineEditScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (state.isNew) "새 $kind" else "$kind 수정") },
+                title = { Text(if (state.isNew) tr("새 {0}", kind) else tr("{0} 수정", kind)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "뒤로") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = tr("뒤로")) }
                 },
                 actions = {
                     if (!state.isNew) {
-                        IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Rounded.Delete, contentDescription = "삭제") }
+                        IconButton(onClick = { confirmDelete = true }) { Icon(Icons.Rounded.Delete, contentDescription = tr("삭제")) }
                     }
-                    TextButton(onClick = onSave, enabled = !state.isLoading, modifier = Modifier.coachTarget("edit.save")) { Text("저장") }
+                    TextButton(onClick = onSave, enabled = !state.isLoading, modifier = Modifier.coachTarget("edit.save")) { Text(tr("저장")) }
                 }
             )
         }
@@ -114,10 +116,10 @@ fun RoutineEditScreen(
             OutlinedTextField(
                 value = state.name,
                 onValueChange = viewModel::setName,
-                label = { Text("$kind 이름") },
-                placeholder = { Text(if (state.isSchedule) "예) 치과 예약" else "예) 기상 루틴") },
+                label = { Text(tr("{0} 이름", kind)) },
+                placeholder = { Text(if (state.isSchedule) tr("예) 치과 예약") else tr("예) 기상 루틴")) },
                 isError = state.nameError,
-                supportingText = { if (state.nameError) Text("이름을 입력해 주세요") },
+                supportingText = { if (state.nameError) Text(tr("이름을 입력해 주세요")) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -126,10 +128,10 @@ fun RoutineEditScreen(
             OutlinedTextField(
                 value = state.message,
                 onValueChange = viewModel::setMessage,
-                label = { Text("메시지 (선택)") },
-                placeholder = { Text(if (state.isSchedule) "예) 보험증 챙기기, 10분 일찍 출발" else "예) 물 한 잔 마시고 시작하기") },
+                label = { Text(tr("메시지 (선택)")) },
+                placeholder = { Text(if (state.isSchedule) tr("예) 보험증 챙기기, 10분 일찍 출발") else tr("예) 물 한 잔 마시고 시작하기")) },
                 supportingText = {
-                    Text("$kind 시각에 사용 중인 화면 위로 이 메시지를 띄워요 · ${state.message.length}/$MESSAGE_MAX")
+                    Text(tr("{0} 시각에 사용 중인 화면 위로 이 메시지를 띄워요 · {1}/{2}", kind, state.message.length, MESSAGE_MAX))
                 },
                 minLines = 2,
                 maxLines = 5,
@@ -137,14 +139,14 @@ fun RoutineEditScreen(
             )
 
             if (state.isSchedule) {
-                SectionHeader("날짜")
+                SectionHeader(tr("날짜"))
                 OutlinedCard(modifier = Modifier.fillMaxWidth().coachTarget("edit.when")) {
                     Column(Modifier.padding(16.dp)) {
                         DateInput(date = state.date, onChange = viewModel::setDate, modifier = Modifier.fillMaxWidth())
                         Text(
-                            "숫자를 눌러 직접 입력하거나 달력 버튼으로 고르세요 · " +
-                                "${state.date.year}년 ${state.date.monthValue}월 ${state.date.dayOfMonth}일 " +
-                                "${DayMask.shortName(state.date.dayOfWeek)}요일",
+                            tr("숫자를 눌러 직접 입력하거나 달력 버튼으로 고르세요 · ") +
+                                tr("{0}년 {1}월 {2}일 ", state.date.year, state.date.monthValue, state.date.dayOfMonth) +
+                                tr("{0}요일", DayMask.shortName(state.date.dayOfWeek)),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 8.dp)
@@ -153,12 +155,12 @@ fun RoutineEditScreen(
                 }
             }
 
-            SectionHeader("시작 시각")
+            SectionHeader(tr("시작 시각"))
             OutlinedCard(modifier = Modifier.fillMaxWidth().coachTarget("edit.time")) {
                 Column(Modifier.padding(16.dp)) {
                     TimeInput(hour = state.hour, minute = state.minute, onChange = viewModel::setTime)
                     Text(
-                        "숫자를 눌러 직접 입력하세요 · ${TimeText.display(TimeText.format(state.hour, state.minute))}",
+                        tr("숫자를 눌러 직접 입력하세요 · {0}", TimeText.display(TimeText.format(state.hour, state.minute))),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 8.dp)
@@ -167,7 +169,7 @@ fun RoutineEditScreen(
             }
             if (state.isPastSchedule) {
                 Text(
-                    "이미 지난 시각이에요. 저장은 되지만 알림과 메시지는 울리지 않아요.",
+                    tr("이미 지난 시각이에요. 저장은 되지만 알림과 메시지는 울리지 않아요."),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 6.dp)
@@ -175,7 +177,7 @@ fun RoutineEditScreen(
             }
 
             if (!state.isSchedule) {
-                SectionHeader("반복 요일")
+                SectionHeader(tr("반복 요일"))
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), modifier = Modifier.fillMaxWidth().coachTarget("edit.when")) {
                     DayMask.ORDERED.forEach { day ->
                         FilterChip(
@@ -187,26 +189,26 @@ fun RoutineEditScreen(
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AssistChip(onClick = { viewModel.setDays(DayMask.ALL) }, label = { Text("매일") })
-                    AssistChip(onClick = { viewModel.setDays(DayMask.WEEKDAYS) }, label = { Text("평일") })
-                    AssistChip(onClick = { viewModel.setDays(DayMask.WEEKEND) }, label = { Text("주말") })
+                    AssistChip(onClick = { viewModel.setDays(DayMask.ALL) }, label = { Text(tr("매일")) })
+                    AssistChip(onClick = { viewModel.setDays(DayMask.WEEKDAYS) }, label = { Text(tr("평일")) })
+                    AssistChip(onClick = { viewModel.setDays(DayMask.WEEKEND) }, label = { Text(tr("주말")) })
                 }
                 if (state.daysError) {
-                    Text("요일을 하나 이상 골라 주세요", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+                    Text(tr("요일을 하나 이상 골라 주세요"), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
                 }
             }
 
-            SectionHeader("확인할 앱", modifier = Modifier.coachTarget("edit.apps")) {
+            SectionHeader(tr("확인할 앱"), modifier = Modifier.coachTarget("edit.apps")) {
                 TextButton(onClick = { showAppPicker = true }) {
                     Icon(Icons.Rounded.Add, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(Modifier.width(4.dp))
-                    Text("앱 추가")
+                    Text(tr("앱 추가"))
                 }
             }
             if (state.apps.isEmpty()) {
                 Text(
-                    "$kind 시간에 챗헤드 맨 앞에 올라올 앱을 골라 주세요. 챗헤드에서 열면 자동으로 체크돼요." +
-                        if (state.isSchedule) " 앱 없이 알림·메시지만 받아도 돼요." else "",
+                    tr("{0} 시간에 챗헤드 맨 앞에 올라올 앱을 골라 주세요. 챗헤드에서 열면 자동으로 체크돼요.", kind) +
+                        if (state.isSchedule) tr(" 앱 없이 알림·메시지만 받아도 돼요.") else "",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -217,47 +219,47 @@ fun RoutineEditScreen(
                     Spacer(Modifier.width(12.dp))
                     Text(app.label, modifier = Modifier.weight(1f))
                     IconButton(onClick = { viewModel.moveApp(app.packageName, -1) }, enabled = index > 0) {
-                        Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = "위로")
+                        Icon(Icons.Rounded.KeyboardArrowUp, contentDescription = tr("위로"))
                     }
                     IconButton(onClick = { viewModel.moveApp(app.packageName, 1) }, enabled = index < state.apps.lastIndex) {
-                        Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = "아래로")
+                        Icon(Icons.Rounded.KeyboardArrowDown, contentDescription = tr("아래로"))
                     }
                     IconButton(onClick = { viewModel.removeApp(app.packageName) }) {
-                        Icon(Icons.Rounded.Close, contentDescription = "빼기")
+                        Icon(Icons.Rounded.Close, contentDescription = tr("빼기"))
                     }
                 }
             }
 
-            SectionHeader("알림", modifier = Modifier.coachTarget("edit.notify"))
-            ToggleRow("시작 알림", "$kind 시각에 알림을 보내요. 소리·진동 방식은 설정에서 바꿀 수 있어요", state.notifyEnabled, viewModel::setNotifyEnabled)
+            SectionHeader(tr("알림"), modifier = Modifier.coachTarget("edit.notify"))
+            ToggleRow(tr("시작 알림"), tr("{0} 시각에 알림을 보내요. 소리·진동 방식은 설정에서 바꿀 수 있어요", kind), state.notifyEnabled, viewModel::setNotifyEnabled)
             if (state.notifyEnabled && !PermissionUtils.hasNotificationPermission(context)) {
                 TextButton(onClick = {
                     permissionRequester.request(listOf(AppPermission.NOTIFICATION), userInitiated = true)
-                }) { Text("알림 권한이 꺼져 있어요 — 허용하기") }
+                }) { Text(tr("알림 권한이 꺼져 있어요 — 허용하기")) }
             }
             if (state.notifyEnabled) {
-                Text("다시 알림 (스누즈)", style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 12.dp))
+                Text(tr("다시 알림 (스누즈)"), style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 12.dp))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf(null, 5, 10, 15, 30).forEach { minutes ->
                         FilterChip(
                             selected = state.snoozeMinutes == minutes,
                             onClick = { viewModel.setSnooze(minutes) },
-                            label = { Text(if (minutes == null) "사용 안 함" else "${minutes}분") }
+                            label = { Text(if (minutes == null) tr("사용 안 함") else tr("{0}분", minutes)) }
                         )
                     }
                 }
             }
 
-            SectionHeader("동작")
-            ToggleRow("챗헤드 자동 펼치기", "$kind 시각이 되면 챗헤드가 펼쳐지며 $kind 앱을 보여줘요", state.autoStart, viewModel::setAutoStart)
-            ToggleRow("$kind 사용", "끄면 알림과 챗헤드 우선 표시가 멈춰요", state.isEnabled, viewModel::setEnabled)
+            SectionHeader(tr("동작"))
+            ToggleRow(tr("챗헤드 자동 펼치기"), tr("{0} 시각이 되면 챗헤드가 펼쳐지며 {1} 앱을 보여줘요", kind, kind), state.autoStart, viewModel::setAutoStart)
+            ToggleRow(tr("{0} 사용", kind), tr("끄면 알림과 챗헤드 우선 표시가 멈춰요"), state.isEnabled, viewModel::setEnabled)
             Spacer(Modifier.height(48.dp))
         }
     }
 
     if (showAppPicker) {
         AppPickerDialog(
-            title = "$kind 앱 선택",
+            title = tr("{0} 앱 선택", kind),
             initialSelected = state.apps,
             onDismiss = { showAppPicker = false },
             onConfirm = {
@@ -270,16 +272,16 @@ fun RoutineEditScreen(
     if (confirmDelete) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text(if (state.isSchedule) "일정을 삭제할까요?" else "루틴을 삭제할까요?") },
+            title = { Text(if (state.isSchedule) tr("일정을 삭제할까요?") else tr("루틴을 삭제할까요?")) },
             text = {
-                Text("체크 기록과 알람도 함께 삭제돼요.")
+                Text(tr("체크 기록과 알람도 함께 삭제돼요."))
             },
             confirmButton = {
                 TextButton(onClick = { confirmDelete = false; viewModel.delete() }) {
-                    Text("삭제", color = MaterialTheme.colorScheme.error)
+                    Text(tr("삭제"), color = MaterialTheme.colorScheme.error)
                 }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("취소") } }
+            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text(tr("취소")) } }
         )
     }
 }
@@ -299,41 +301,41 @@ private fun ToggleRow(title: String, description: String, checked: Boolean, onCh
 private fun editTourSteps(kind: String, isSchedule: Boolean): List<CoachStep> {
     val message = CoachStep(
         target = "edit.message",
-        title = "메시지",
-        body = "$kind 시각이 되면 쓰고 있던 화면 위로 이 메시지를 띄워요. 비워 둬도 괜찮아요."
+        title = tr("메시지"),
+        body = tr("{0} 시각이 되면 쓰고 있던 화면 위로 이 메시지를 띄워요. 비워 둬도 괜찮아요.", kind)
     )
     val time = CoachStep(
         target = "edit.time",
-        title = "시작 시각",
-        body = "시·분 숫자를 눌러 바로 입력해요. 이 시각에 알림이 오고, 등록한 앱이 챗헤드 맨 앞에 올라와요."
+        title = tr("시작 시각"),
+        body = tr("시·분 숫자를 눌러 바로 입력해요. 이 시각에 알림이 오고, 등록한 앱이 챗헤드 맨 앞에 올라와요.")
     )
     val whenStep = if (isSchedule) {
         CoachStep(
             target = "edit.when",
-            title = "날짜",
-            body = "숫자를 눌러 년·월·일을 바로 입력하거나, 오른쪽 달력 버튼으로 골라요. 일정은 이 날짜에 한 번만 실행돼요."
+            title = tr("날짜"),
+            body = tr("숫자를 눌러 년·월·일을 바로 입력하거나, 오른쪽 달력 버튼으로 골라요. 일정은 이 날짜에 한 번만 실행돼요.")
         )
     } else {
         CoachStep(
             target = "edit.when",
-            title = "반복 요일",
-            body = "루틴을 반복할 요일을 골라요. 아래 '매일 · 평일 · 주말'로 한 번에 고를 수도 있어요."
+            title = tr("반복 요일"),
+            body = tr("루틴을 반복할 요일을 골라요. 아래 '매일 · 평일 · 주말'로 한 번에 고를 수도 있어요.")
         )
     }
     val apps = CoachStep(
         target = "edit.apps",
-        title = "확인할 앱",
-        body = "$kind 시간에 이 앱들이 챗헤드 맨 앞에 올라와요. 챗헤드에서 열면 자동으로 체크되고, 모두 열면 완료예요."
+        title = tr("확인할 앱"),
+        body = tr("{0} 시간에 이 앱들이 챗헤드 맨 앞에 올라와요. 챗헤드에서 열면 자동으로 체크되고, 모두 열면 완료예요.", kind)
     )
     val notify = CoachStep(
         target = "edit.notify",
-        title = "알림",
-        body = "시작 알림과 다시 알림(스누즈)을 정해요. 알림 권한이 필요하면 저장할 때 물어볼게요."
+        title = tr("알림"),
+        body = tr("시작 알림과 다시 알림(스누즈)을 정해요. 알림 권한이 필요하면 저장할 때 물어볼게요.")
     )
     val save = CoachStep(
         target = "edit.save",
-        title = "저장",
-        body = "다 정했으면 저장을 눌러요. 저장한 ${kind}은 홈과 루틴 탭에서 볼 수 있어요."
+        title = tr("저장"),
+        body = tr("다 정했으면 저장을 눌러요. 저장한 {0}은 홈과 루틴 탭에서 볼 수 있어요.", kind)
     )
     // 일정: 메시지 → 날짜 → 시각 / 루틴: 메시지 → 시각 → 요일 (화면 배치 순서)
     return if (isSchedule) listOf(message, whenStep, time, apps, notify, save)

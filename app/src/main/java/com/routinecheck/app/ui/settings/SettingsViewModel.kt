@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.routinecheck.app.domain.tr
 
 data class PermissionItem(
     val title: String,
@@ -72,24 +73,24 @@ class SettingsViewModel @Inject constructor(
 
     private fun readPermissions(): List<PermissionItem> = listOf(
         PermissionItem(
-            "다른 앱 위에 표시", "챗헤드를 화면 위에 띄워요", true,
+            tr("다른 앱 위에 표시"), tr("챗헤드를 화면 위에 띄워요"), true,
             PermissionUtils.hasOverlayPermission(context), PermissionUtils.overlayPermissionIntent(context)
         ),
         PermissionItem(
-            "알림", "루틴 시작 알림을 보내요", false,
+            tr("알림"), tr("루틴 시작 알림을 보내요"), false,
             PermissionUtils.hasNotificationPermission(context),
             Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
         ),
         PermissionItem(
-            "정확한 알람", "루틴 시각에 늦지 않게 알려요", false,
+            tr("정확한 알람"), tr("루틴 시각에 늦지 않게 알려요"), false,
             PermissionUtils.canScheduleExactAlarms(context), PermissionUtils.exactAlarmIntent(context)
         ),
         PermissionItem(
-            "알림 접근", "메신저 등의 미확인 알림 수를 챗헤드 배지로 보여줘요", false,
+            tr("알림 접근"), tr("메신저 등의 미확인 알림 수를 챗헤드 배지로 보여줘요"), false,
             PermissionUtils.hasNotificationListenerAccess(context), PermissionUtils.notificationListenerIntent(context)
         ),
         PermissionItem(
-            "배터리 최적화 제외", "목록에서 '루틴 체크'를 '최적화 안 함'으로 바꾸면 챗헤드가 꺼지지 않아요", false,
+            tr("배터리 최적화 제외"), tr("목록에서 '루틴 체크'를 '최적화 안 함'으로 바꾸면 챗헤드가 꺼지지 않아요"), false,
             PermissionUtils.isIgnoringBatteryOptimizations(context), PermissionUtils.batteryOptimizationIntent(context)
         )
     ).map { it.copy(intent = it.intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }

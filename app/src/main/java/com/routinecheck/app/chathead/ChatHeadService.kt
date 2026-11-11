@@ -72,6 +72,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.routinecheck.app.domain.tr
 
 /**
  * 챗헤드 오버레이 Foreground Service — 앱의 핵심 기능.
@@ -180,10 +181,10 @@ class ChatHeadService : LifecycleService(), SavedStateRegistryOwner {
         )
         val notification: Notification = NotificationCompat.Builder(this, NotificationChannels.CHATHEAD)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle("챗헤드 실행 중")
-            .setContentText("화면 위 챗헤드로 앱을 바로 열 수 있어요")
+            .setContentTitle(tr("챗헤드 실행 중"))
+            .setContentText(tr("화면 위 챗헤드로 앱을 바로 열 수 있어요"))
             .setContentIntent(openApp)
-            .addAction(0, "챗헤드 끄기", stop)
+            .addAction(0, tr("챗헤드 끄기"), stop)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .build()
@@ -278,7 +279,7 @@ class ChatHeadService : LifecycleService(), SavedStateRegistryOwner {
         val newlyCompleted = today.routines.filter { it.routine.routineId in completedNow - previous }
         if (newlyCompleted.isEmpty()) return
 
-        Toast.makeText(this, "${newlyCompleted.first().routine.name} 완료! 🎉", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, tr("{0} 완료! 🎉", newlyCompleted.first().routine.name), Toast.LENGTH_SHORT).show()
         if (today.active.isNotEmpty()) return // 아직 다른 루틴이 진행 중이면 그대로
         when (settings.onCompleteBehavior) {
             OnCompleteBehavior.KEEP -> Unit
@@ -466,7 +467,7 @@ class ChatHeadService : LifecycleService(), SavedStateRegistryOwner {
     }
 
     private fun removeChatHead() {
-        Toast.makeText(this, "챗헤드를 껐어요. 앱에서 다시 켤 수 있어요", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, tr("챗헤드를 껐어요. 앱에서 다시 켤 수 있어요"), Toast.LENGTH_SHORT).show()
         lifecycleScope.launch {
             settingsRepository.setEnabled(false) // 구독 중인 흐름이 stopSelf()까지 처리
         }
@@ -489,7 +490,7 @@ class ChatHeadService : LifecycleService(), SavedStateRegistryOwner {
         val pkg = entry.packageName ?: return
         val launched = appRegistry.launch(pkg)
         if (!launched) {
-            Toast.makeText(this, "${entry.label}을(를) 열 수 없어요 (삭제되었을 수 있어요)", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, tr("{0}을(를) 열 수 없어요 (삭제되었을 수 있어요)", entry.label), Toast.LENGTH_SHORT).show()
             return
         }
         collapse()
@@ -506,7 +507,7 @@ class ChatHeadService : LifecycleService(), SavedStateRegistryOwner {
         val url = entry.url ?: return
         // v0.7.1: 예전 버전에서 저장된 항목도 있으니 열기 직전에 한 번 더 웹 주소인지 확인
         if (!LinkUtils.isWebUrl(url)) {
-            Toast.makeText(this, "http 또는 https 웹 주소만 열 수 있어요. 항목을 수정해 주세요", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, tr("http 또는 https 웹 주소만 열 수 있어요. 항목을 수정해 주세요"), Toast.LENGTH_SHORT).show()
             return
         }
         try {
@@ -517,10 +518,10 @@ class ChatHeadService : LifecycleService(), SavedStateRegistryOwner {
             )
             collapse()
         } catch (e: ActivityNotFoundException) {
-            Toast.makeText(this, "이 주소를 열 수 있는 앱이 없어요", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, tr("이 주소를 열 수 있는 앱이 없어요"), Toast.LENGTH_SHORT).show()
         } catch (e: RuntimeException) {
             // 어떤 이유로든 열기에 실패해도 챗헤드 서비스는 계속 동작하도록
-            Toast.makeText(this, "이 주소를 열 수 없어요", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, tr("이 주소를 열 수 없어요"), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -528,7 +529,7 @@ class ChatHeadService : LifecycleService(), SavedStateRegistryOwner {
         if (entry.kind != ChatHeadKind.APP) return
         val pkg = entry.packageName ?: return
         if (!entry.isRoutineApp) {
-            Toast.makeText(this, "루틴에 포함된 앱만 체크할 수 있어요", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, tr("루틴에 포함된 앱만 체크할 수 있어요"), Toast.LENGTH_SHORT).show()
             return
         }
         val newValue = entry.isChecked != true

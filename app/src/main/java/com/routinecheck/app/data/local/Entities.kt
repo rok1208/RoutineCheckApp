@@ -197,8 +197,8 @@ data class ChatHeadSettingsEntity(
     /** 펼침 UI 스타일: "CAROUSEL"(기본) / "CONTAINER" */
     val uiStyle: String = "CAROUSEL",
 
-    /** 챗헤드 사용 여부 */
-    val enabled: Boolean = true,
+    /** 챗헤드 사용 여부 (v0.8.0: 처음에는 꺼짐) */
+    val enabled: Boolean = false,
 
     /** v5: 루틴 시작 알림 방식 "SOUND_VIBRATE"(기본) / "SOUND" / "VIBRATE" — 앱 전체 설정이라 이 표에 함께 둡니다 */
     val alertMode: String = "SOUND_VIBRATE"

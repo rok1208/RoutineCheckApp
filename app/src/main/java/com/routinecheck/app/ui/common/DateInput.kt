@@ -16,6 +16,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneOffset
+import com.routinecheck.app.domain.tr
 
 /**
  * 날짜 입력 (v0.5.0 일정용).
@@ -54,9 +55,9 @@ fun DateInput(
             onCommit = { y -> onChange(safeDate(y, date.monthValue, date.dayOfMonth)) },
             onNext = { monthFocus.requestFocus() },
             imeAction = ImeAction.Next,
-            description = "연도"
+            description = tr("연도")
         )
-        Text("년", modifier = Modifier.padding(horizontal = 4.dp))
+        Text(tr("년"), modifier = Modifier.padding(horizontal = 4.dp))
         DigitField(
             value = date.monthValue,
             max = 12,
@@ -67,10 +68,10 @@ fun DateInput(
             onCommit = { m -> onChange(safeDate(date.year, m, date.dayOfMonth)) },
             onNext = { dayFocus.requestFocus() },
             imeAction = ImeAction.Next,
-            description = "월",
+            description = tr("월"),
             modifier = Modifier.focusRequester(monthFocus)
         )
-        Text("월", modifier = Modifier.padding(horizontal = 4.dp))
+        Text(tr("월"), modifier = Modifier.padding(horizontal = 4.dp))
         DigitField(
             value = date.dayOfMonth,
             max = 31,
@@ -81,13 +82,13 @@ fun DateInput(
             onCommit = { d -> onChange(safeDate(date.year, date.monthValue, d)) },
             onNext = { focusManager.clearFocus() },
             imeAction = ImeAction.Done,
-            description = "일",
+            description = tr("일"),
             modifier = Modifier.focusRequester(dayFocus)
         )
-        Text("일", modifier = Modifier.padding(start = 4.dp))
+        Text(tr("일"), modifier = Modifier.padding(start = 4.dp))
         Spacer(Modifier.weight(1f))
         IconButton(onClick = { showPicker = true }) {
-            Icon(Icons.Rounded.CalendarMonth, contentDescription = "달력에서 날짜 고르기")
+            Icon(Icons.Rounded.CalendarMonth, contentDescription = tr("달력에서 날짜 고르기"))
         }
     }
 
@@ -103,9 +104,9 @@ fun DateInput(
                         onChange(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
                     }
                     showPicker = false
-                }) { Text("확인") }
+                }) { Text(tr("확인")) }
             },
-            dismissButton = { TextButton(onClick = { showPicker = false }) { Text("취소") } }
+            dismissButton = { TextButton(onClick = { showPicker = false }) { Text(tr("취소")) } }
         ) {
             DatePicker(state = pickerState)
         }

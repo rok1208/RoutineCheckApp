@@ -7,28 +7,29 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import com.routinecheck.app.domain.tr
 
 /** 루틴 완료 시 챗헤드 동작 */
 enum class OnCompleteBehavior(val label: String) {
-    KEEP("그대로 유지"),
-    MINIMIZE("가장자리 바로 축소"),
-    HIDE("숨기기 (다음 루틴 알람이나 앱을 열 때 다시 표시)")
+    KEEP(tr("그대로 유지")),
+    MINIMIZE(tr("가장자리 바로 축소")),
+    HIDE(tr("숨기기 (다음 루틴 알람이나 앱을 열 때 다시 표시)"))
 }
 
 /** 바 상태일 때 붙는 화면 쪽 */
-enum class EdgeSide(val label: String) { LEFT("왼쪽"), RIGHT("오른쪽") }
+enum class EdgeSide(val label: String) { LEFT(tr("왼쪽")), RIGHT(tr("오른쪽")) }
 
 /** 챗헤드 펼침 방식. CAROUSEL이 기본값, CONTAINER는 설정에서 고르는 대체 스타일 */
 enum class ChatHeadStyle(val label: String, val description: String) {
-    CAROUSEL("휠 캐러셀 (기본)", "위아래로 돌려서 고르기. 가운데 카드가 선택된 앱"),
-    CONTAINER("컨테이너 (목록형)", "사각형 패널에 앱을 한 번에 나열")
+    CAROUSEL(tr("휠 캐러셀 (기본)"), tr("위아래로 돌려서 고르기. 가운데 카드가 선택된 앱")),
+    CONTAINER(tr("컨테이너 (목록형)"), tr("사각형 패널에 앱을 한 번에 나열"))
 }
 
 /** 루틴 시작 알림 방식 (휴대폰이 무음·진동 모드면 휴대폰 설정이 우선) */
 enum class AlertMode(val label: String) {
-    SOUND_VIBRATE("소리 + 진동"),
-    SOUND("소리"),
-    VIBRATE("진동")
+    SOUND_VIBRATE(tr("소리 + 진동")),
+    SOUND(tr("소리")),
+    VIBRATE(tr("진동"))
 }
 
 /** 화면/서비스 코드에서 쓰는 챗헤드 설정 (enum으로 타입 안전하게) */
@@ -38,7 +39,7 @@ data class ChatHeadSettings(
     val iconUri: String? = null,
     val edgeSide: EdgeSide = EdgeSide.RIGHT,
     val uiStyle: ChatHeadStyle = ChatHeadStyle.CAROUSEL,
-    val enabled: Boolean = true,
+    val enabled: Boolean = false,   // v0.8.0: 처음 설치하면 꺼진 상태 (사용자가 홈·설정에서 켬)
     val alertMode: AlertMode = AlertMode.SOUND_VIBRATE
 )
 

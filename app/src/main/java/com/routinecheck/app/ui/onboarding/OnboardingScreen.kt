@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.routinecheck.app.ui.common.ChatHeadPreview
+import com.routinecheck.app.domain.tr
 
 /**
  * 온보딩 화면 UI. 상태는 파라미터로만 받고, 실제 권한 요청은 OnboardingActivity가 처리합니다.
@@ -40,10 +41,10 @@ fun OnboardingScreen(
                 Spacer(Modifier.height(24.dp))
                 ChatHeadPreview(iconUri = null, size = 72.dp)
                 Spacer(Modifier.height(16.dp))
-                Text("챗헤드 하나로 주요 앱을 바로", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(tr("챗헤드 하나로 주요 앱을 바로"), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text(
-                    "어느 화면에서든 챗헤드를 눌러 앱을 열고, 루틴 시간엔 확인할 앱을 먼저 보여드려요.\n" +
-                        "시작할 때는 아래 권한 하나만 있으면 돼요. 알림 같은 다른 권한은 그 기능을 쓸 때 물어볼게요.",
+                    tr("어느 화면에서든 챗헤드를 눌러 앱을 열고, 루틴 시간엔 확인할 앱을 먼저 보여드려요.\n") +
+                        tr("시작할 때는 아래 권한 하나만 있으면 돼요. 알림 같은 다른 권한은 그 기능을 쓸 때 물어볼게요."),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(top = 6.dp)
@@ -63,11 +64,11 @@ fun OnboardingScreen(
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp)
             ) {
-                Text(if (uiState.requiredGranted) "시작하기" else "필수 권한 허용하기")
+                Text(if (uiState.requiredGranted) tr("시작하기") else tr("필수 권한 허용하기"))
             }
             if (!uiState.requiredGranted) {
                 TextButton(onClick = onSkip, modifier = Modifier.padding(top = 4.dp)) {
-                    Text("나중에 할게요 (챗헤드 없이 시작)")
+                    Text(tr("나중에 할게요 (챗헤드 없이 시작)"))
                 }
             }
         }
@@ -91,7 +92,7 @@ private fun PermissionRow(step: PermissionStepUiState, onClick: () -> Unit) {
                 Text(step.title, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    if (step.isRequired) "필수" else "권장",
+                    if (step.isRequired) tr("필수") else tr("권장"),
                     style = MaterialTheme.typography.labelSmall,
                     color = if (step.isRequired) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -99,9 +100,9 @@ private fun PermissionRow(step: PermissionStepUiState, onClick: () -> Unit) {
             Text(step.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (step.isGranted) {
-            Icon(Icons.Default.Check, contentDescription = "허용됨", tint = MaterialTheme.colorScheme.primary)
+            Icon(Icons.Default.Check, contentDescription = tr("허용됨"), tint = MaterialTheme.colorScheme.primary)
         } else {
-            TextButton(onClick = onClick) { Text("허용") }
+            TextButton(onClick = onClick) { Text(tr("허용")) }
         }
     }
 }

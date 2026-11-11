@@ -6,6 +6,7 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.RingtoneManager
 import com.routinecheck.app.data.repository.AlertMode
+import com.routinecheck.app.domain.tr
 
 /**
  * 알림 채널.
@@ -36,8 +37,8 @@ object NotificationChannels {
         val nm = context.getSystemService(NotificationManager::class.java)
         nm.deleteNotificationChannel(LEGACY_ROUTINE)
         nm.createNotificationChannel(
-            NotificationChannel(CHATHEAD, "챗헤드 실행 중", NotificationManager.IMPORTANCE_MIN).apply {
-                description = "챗헤드를 화면에 띄워두기 위해 필요한 알림입니다"
+            NotificationChannel(CHATHEAD, tr("챗헤드 실행 중"), NotificationManager.IMPORTANCE_MIN).apply {
+                description = tr("챗헤드를 화면에 띄워두기 위해 필요한 알림입니다")
                 setShowBadge(false)
             }
         )
@@ -47,23 +48,23 @@ object NotificationChannels {
             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
             .build()
         nm.createNotificationChannel(
-            NotificationChannel(ROUTINE_SOUND_VIBRATE, "루틴 알림 (소리 + 진동)", NotificationManager.IMPORTANCE_HIGH).apply {
-                description = "루틴 시작 시각에 소리와 진동으로 알려드립니다"
+            NotificationChannel(ROUTINE_SOUND_VIBRATE, tr("루틴 알림 (소리 + 진동)"), NotificationManager.IMPORTANCE_HIGH).apply {
+                description = tr("루틴 시작 시각에 소리와 진동으로 알려드립니다")
                 setSound(sound, audio)
                 enableVibration(true)
                 vibrationPattern = VIBRATION
             }
         )
         nm.createNotificationChannel(
-            NotificationChannel(ROUTINE_SOUND, "루틴 알림 (소리)", NotificationManager.IMPORTANCE_HIGH).apply {
-                description = "루틴 시작 시각에 소리로만 알려드립니다"
+            NotificationChannel(ROUTINE_SOUND, tr("루틴 알림 (소리)"), NotificationManager.IMPORTANCE_HIGH).apply {
+                description = tr("루틴 시작 시각에 소리로만 알려드립니다")
                 setSound(sound, audio)
                 enableVibration(false)
             }
         )
         nm.createNotificationChannel(
-            NotificationChannel(ROUTINE_VIBRATE, "루틴 알림 (진동)", NotificationManager.IMPORTANCE_HIGH).apply {
-                description = "루틴 시작 시각에 진동으로만 알려드립니다"
+            NotificationChannel(ROUTINE_VIBRATE, tr("루틴 알림 (진동)"), NotificationManager.IMPORTANCE_HIGH).apply {
+                description = tr("루틴 시작 시각에 진동으로만 알려드립니다")
                 setSound(null, null)
                 enableVibration(true)
                 vibrationPattern = VIBRATION

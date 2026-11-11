@@ -24,6 +24,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.routinecheck.app.domain.tr
 
 /**
  * 루틴 알람 수신.
@@ -97,11 +98,11 @@ class RoutineAlarmReceiver : BroadcastReceiver() {
         val routine = rwa.routine
         val apps = rwa.apps.joinToString(", ") { it.appLabel }
         val message = routine.message?.trim().orEmpty()
-        val appsLine = if (apps.isBlank()) "" else "확인할 앱: $apps"
-        val shortText = message.ifBlank { appsLine.ifBlank { "루틴을 시작해 보세요" } }
+        val appsLine = if (apps.isBlank()) "" else tr("확인할 앱: {0}", apps)
+        val shortText = message.ifBlank { appsLine.ifBlank { tr("루틴을 시작해 보세요") } }
         val longText = listOf(message, appsLine).filter { it.isNotBlank() }.joinToString("\n").ifBlank { shortText }
-        val title = if (routine.isSchedule) "📅 ${routine.name} 일정이에요 (${TimeText.display(routine.startTime)})"
-        else "⏰ ${routine.name} 시간이에요 (${TimeText.display(routine.startTime)})"
+        val title = if (routine.isSchedule) tr("📅 {0} 일정이에요 ({1})", routine.name, TimeText.display(routine.startTime))
+        else tr("⏰ {0} 시간이에요 ({1})", routine.name, TimeText.display(routine.startTime))
 
         val openApp = PendingIntent.getActivity(
             context, notificationId(routine.routineId),
@@ -123,17 +124,17 @@ class RoutineAlarmReceiver : BroadcastReceiver() {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .setContentIntent(openApp)
-            .addAction(0, "챗헤드 열기", openChatHead)
+            .addAction(0, tr("챗헤드 열기"), openChatHead)
             // v0.7.1: 잠금 화면에는 루틴 이름·메시지를 숨기고 시각만 표시 (잠금 해제하면 전체 내용)
             .setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
             .setPublicVersion(
                 NotificationCompat.Builder(context, channelId)
                     .setSmallIcon(R.drawable.ic_notification)
                     .setContentTitle(
-                        (if (routine.isSchedule) "📅 일정 시간이에요" else "⏰ 루틴 시간이에요") +
+                        (if (routine.isSchedule) tr("📅 일정 시간이에요") else tr("⏰ 루틴 시간이에요")) +
                             " (${TimeText.display(routine.startTime)})"
                     )
-                    .setContentText("잠금을 해제하면 내용을 볼 수 있어요")
+                    .setContentText(tr("잠금을 해제하면 내용을 볼 수 있어요"))
                     .setCategory(NotificationCompat.CATEGORY_REMINDER)
                     .build()
             )
@@ -146,7 +147,7 @@ class RoutineAlarmReceiver : BroadcastReceiver() {
                     .putExtra(RoutineAlarmScheduler.EXTRA_ROUTINE_ID, routine.routineId),
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
             )
-            builder.addAction(0, "${minutes}분 후 다시", snooze)
+            builder.addAction(0, tr("{0}분 후 다시", minutes), snooze)
         }
 
         try {

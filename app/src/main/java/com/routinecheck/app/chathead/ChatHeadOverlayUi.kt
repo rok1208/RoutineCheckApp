@@ -87,6 +87,7 @@ import com.routinecheck.app.ui.common.ChatHeadItemIcon
 import kotlin.math.abs
 import kotlin.math.min
 import kotlinx.coroutines.launch
+import com.routinecheck.app.domain.tr
 
 /** 챗헤드 오버레이 크기 상수 (서비스의 WindowManager 계산과 반드시 일치해야 함) */
 object HeadDimens {
@@ -143,12 +144,12 @@ fun BubbleHead(state: OverlayState, modifier: Modifier = Modifier) {
             if (icon != null) {
                 Image(
                     bitmap = icon,
-                    contentDescription = "챗헤드",
+                    contentDescription = tr("챗헤드"),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
-                Icon(Icons.Rounded.Apps, contentDescription = "챗헤드", tint = Color.White, modifier = Modifier.size(28.dp))
+                Icon(Icons.Rounded.Apps, contentDescription = tr("챗헤드"), tint = Color.White, modifier = Modifier.size(28.dp))
             }
         }
         state.totalBadge?.let { badge ->
@@ -197,7 +198,7 @@ fun TrashTarget(highlighted: Boolean) {
                 .background(if (highlighted) Brand.Badge else Color(0xCC1C2630), CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Icon(Icons.Rounded.Close, contentDescription = "챗헤드 제거", tint = Color.White, modifier = Modifier.size(30.dp))
+            Icon(Icons.Rounded.Close, contentDescription = tr("챗헤드 제거"), tint = Color.White, modifier = Modifier.size(30.dp))
         }
     }
 }
@@ -295,7 +296,7 @@ private fun PanelHeader(state: OverlayState, alignRight: Boolean) {
         Surface(shape = RoundedCornerShape(50), color = Color(0xE61C2630)) {
             Text(
                 text = if (progress != null) "${progress.title}  ${progress.done}/${progress.total}"
-                else "진행 중인 루틴 없음",
+                else tr("진행 중인 루틴 없음"),
                 color = Color.White,
                 style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
@@ -335,8 +336,8 @@ private fun FolderHeader(state: OverlayState, alignRight: Boolean, actions: Expa
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            FooterChip(Icons.AutoMirrored.Rounded.ArrowBack, "이전으로", actions.onBack)
-            FooterChip(Icons.Rounded.VerticalAlignTop, "최상단으로", actions.onTop)
+            FooterChip(Icons.AutoMirrored.Rounded.ArrowBack, tr("이전으로"), actions.onBack)
+            FooterChip(Icons.Rounded.VerticalAlignTop, tr("최상단으로"), actions.onTop)
         }
     }
 }
@@ -351,12 +352,12 @@ private fun PanelFooter(alignRight: Boolean, isCarousel: Boolean, actions: Expan
         verticalArrangement = Arrangement.Center
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            FooterChip(Icons.Rounded.Home, "앱 열기", actions.onOpenApp)
-            FooterChip(Icons.Rounded.Tune, "앱 관리", actions.onManageApps)
-            FooterChip(Icons.Rounded.Settings, "설정", actions.onOpenSettings)
+            FooterChip(Icons.Rounded.Home, tr("앱 열기"), actions.onOpenApp)
+            FooterChip(Icons.Rounded.Tune, tr("앱 관리"), actions.onManageApps)
+            FooterChip(Icons.Rounded.Settings, tr("설정"), actions.onOpenSettings)
         }
         Text(
-            text = if (isCarousel) "위아래로 돌려 고르고 가운데를 탭 · 길게 눌러 체크" else "탭해서 열기 · 길게 눌러 체크 (루틴 앱)",
+            text = if (isCarousel) tr("위아래로 돌려 고르고 가운데를 탭 · 길게 눌러 체크") else tr("탭해서 열기 · 길게 눌러 체크 (루틴 앱)"),
             color = Color.White.copy(alpha = 0.75f),
             style = MaterialTheme.typography.labelSmall,
             modifier = Modifier.padding(top = 4.dp)
@@ -520,11 +521,11 @@ private fun EntryRow(entry: ChatHeadEntry, badge: Badge?, iconSize: Dp, modifier
             )
             Text(
                 text = when {
-                    entry.kind == ChatHeadKind.FOLDER -> "폴더 · ${entry.childCount}개"
-                    entry.kind == ChatHeadKind.LINK -> entry.url?.let { LinkUtils.hostOf(it) } ?: "웹사이트"
-                    entry.isChecked == true -> "${entry.routineName} · 확인함"
-                    entry.isChecked == false -> "${entry.routineName} · 확인 전"
-                    else -> "고정 앱"
+                    entry.kind == ChatHeadKind.FOLDER -> tr("폴더 · {0}개", entry.childCount)
+                    entry.kind == ChatHeadKind.LINK -> entry.url?.let { LinkUtils.hostOf(it) } ?: tr("웹사이트")
+                    entry.isChecked == true -> tr("{0} · 확인함", entry.routineName)
+                    entry.isChecked == false -> tr("{0} · 확인 전", entry.routineName)
+                    else -> tr("고정 앱")
                 },
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -535,7 +536,7 @@ private fun EntryRow(entry: ChatHeadEntry, badge: Badge?, iconSize: Dp, modifier
         if (entry.kind == ChatHeadKind.FOLDER) {
             Icon(
                 Icons.AutoMirrored.Rounded.KeyboardArrowRight,
-                contentDescription = "폴더 열기",
+                contentDescription = tr("폴더 열기"),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         } else {
@@ -551,7 +552,7 @@ private fun CheckIndicator(checked: Boolean?) {
         true -> Box(
             modifier = Modifier.size(22.dp).background(Brand.Green, CircleShape),
             contentAlignment = Alignment.Center
-        ) { Icon(Icons.Rounded.Check, contentDescription = "확인함", tint = Color.White, modifier = Modifier.size(15.dp)) }
+        ) { Icon(Icons.Rounded.Check, contentDescription = tr("확인함"), tint = Color.White, modifier = Modifier.size(15.dp)) }
         false -> Box(
             modifier = Modifier
                 .size(22.dp)
@@ -569,18 +570,18 @@ private fun CheckIndicator(checked: Boolean?) {
 private fun EmptyCard(inFolder: Boolean, onManageApps: () -> Unit, modifier: Modifier) {
     Surface(shape = RoundedCornerShape(20.dp), color = MaterialTheme.colorScheme.surface, modifier = modifier.padding(4.dp)) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(if (inFolder) "빈 폴더예요" else "챗헤드에 띄울 항목이 없어요", style = MaterialTheme.typography.titleSmall)
+            Text(if (inFolder) tr("빈 폴더예요") else tr("챗헤드에 띄울 항목이 없어요"), style = MaterialTheme.typography.titleSmall)
             Spacer(Modifier.height(4.dp))
             Text(
-                if (inFolder) "앱 관리에서 이 폴더에 앱이나 웹사이트를 넣어 보세요."
-                else "자주 쓰는 앱·웹사이트를 추가하거나 폴더로 묶어 두면 여기서 바로 열 수 있어요.",
+                if (inFolder) tr("앱 관리에서 이 폴더에 앱이나 웹사이트를 넣어 보세요.")
+                else tr("자주 쓰는 앱·웹사이트를 추가하거나 폴더로 묶어 두면 여기서 바로 열 수 있어요."),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(Modifier.height(10.dp))
             Surface(shape = RoundedCornerShape(50), color = MaterialTheme.colorScheme.primary, onClick = onManageApps) {
                 Text(
-                    "추가하러 가기",
+                    tr("추가하러 가기"),
                     color = MaterialTheme.colorScheme.onPrimary,
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)

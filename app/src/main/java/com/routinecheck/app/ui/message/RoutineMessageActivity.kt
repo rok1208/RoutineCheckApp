@@ -29,6 +29,7 @@ import com.routinecheck.app.MainActivity
 import com.routinecheck.app.chathead.ChatHeadController
 import com.routinecheck.app.domain.TimeText
 import com.routinecheck.app.ui.RoutineCheckTheme
+import com.routinecheck.app.domain.tr
 
 /** 화면에 보여줄 루틴/일정 메시지 한 건 */
 data class RoutineMessage(
@@ -198,7 +199,7 @@ private fun MessageDialog(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        (if (message.isSchedule) "일정 · " else "루틴 · ") + TimeText.display(message.startTime),
+                        (if (message.isSchedule) tr("일정 · ") else tr("루틴 · ")) + TimeText.display(message.startTime),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary
                     )
@@ -206,7 +207,7 @@ private fun MessageDialog(
                 if (locked) {
                     // 잠금 화면: 옆 사람이 볼 수 있으니 이름·메시지는 잠금 해제 뒤에 표시
                     Text(
-                        "잠금을 해제하면 내용을 볼 수 있어요",
+                        tr("잠금을 해제하면 내용을 볼 수 있어요"),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier.padding(top = 8.dp)
@@ -215,8 +216,8 @@ private fun MessageDialog(
                         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                         modifier = Modifier.fillMaxWidth().padding(top = 20.dp)
                     ) {
-                        TextButton(onClick = onConfirm) { Text("닫기") }
-                        Button(onClick = onUnlock) { Text("잠금 해제") }
+                        TextButton(onClick = onConfirm) { Text(tr("닫기")) }
+                        Button(onClick = onUnlock) { Text(tr("잠금 해제")) }
                     }
                 } else {
                     Text(
@@ -242,7 +243,7 @@ private fun MessageDialog(
                     }
                     if (remaining > 0) {
                         Text(
-                            "메시지 ${remaining}개가 더 있어요",
+                            tr("메시지 {0}개가 더 있어요", remaining),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(top = 10.dp)
@@ -252,8 +253,8 @@ private fun MessageDialog(
                         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                         modifier = Modifier.fillMaxWidth().padding(top = 20.dp)
                     ) {
-                        TextButton(onClick = onOpenApp) { Text("앱 열기") }
-                        Button(onClick = onConfirm) { Text(if (remaining > 0) "다음" else "확인") }
+                        TextButton(onClick = onOpenApp) { Text(tr("앱 열기")) }
+                        Button(onClick = onConfirm) { Text(if (remaining > 0) tr("다음") else tr("확인")) }
                     }
                 }
             }

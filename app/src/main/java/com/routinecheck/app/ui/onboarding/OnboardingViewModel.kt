@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.routinecheck.app.domain.tr
 
 // ─────────────────────────────── PermissionStep
 
@@ -69,8 +70,8 @@ class OnboardingViewModel @Inject constructor(
         _uiState.value = OnboardingUiState(
             steps = listOf(
                 PermissionStepUiState(
-                    PermissionType.OVERLAY, "다른 앱 위에 표시",
-                    "어느 화면에서든 챗헤드를 띄워 앱을 바로 열 수 있게 해줘요",
+                    PermissionType.OVERLAY, tr("다른 앱 위에 표시"),
+                    tr("어느 화면에서든 챗헤드를 띄워 앱을 바로 열 수 있게 해줘요"),
                     PermissionUtils.hasOverlayPermission(context)
                 )
             )

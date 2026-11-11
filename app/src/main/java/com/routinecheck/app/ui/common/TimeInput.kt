@@ -27,6 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.routinecheck.app.domain.tr
 
 /**
  * 시각 직접 입력 (시계 다이얼 없이 숫자만).
@@ -51,8 +52,8 @@ fun TimeInput(
 
     Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            FilterChip(selected = !isPm, onClick = { if (isPm) onChange(hour - 12, minute) }, label = { Text("오전") })
-            FilterChip(selected = isPm, onClick = { if (!isPm) onChange(hour + 12, minute) }, label = { Text("오후") })
+            FilterChip(selected = !isPm, onClick = { if (isPm) onChange(hour - 12, minute) }, label = { Text(tr("오전")) })
+            FilterChip(selected = isPm, onClick = { if (!isPm) onChange(hour + 12, minute) }, label = { Text(tr("오후")) })
         }
         Spacer(Modifier.width(16.dp))
         DigitField(
@@ -69,7 +70,7 @@ fun TimeInput(
             },
             onNext = { minuteFocus.requestFocus() },
             imeAction = ImeAction.Next,
-            description = "시"
+            description = tr("시")
         )
         Text(
             ":",
@@ -84,7 +85,7 @@ fun TimeInput(
             onCommit = { n -> onChange(hour, n) },
             onNext = { focusManager.clearFocus() },
             imeAction = ImeAction.Done,
-            description = "분",
+            description = tr("분"),
             modifier = Modifier.focusRequester(minuteFocus)
         )
     }
@@ -139,7 +140,7 @@ internal fun DigitField(
         keyboardActions = KeyboardActions(onNext = { onNext() }, onDone = { onNext() }),
         modifier = modifier
             .width(width)
-            .semantics { contentDescription = "$description 입력" }
+            .semantics { contentDescription = tr("{0} 입력", description) }
             .onFocusChanged { state ->
                 if (state.isFocused && !focused) editing = ""
                 if (!state.isFocused && focused) editing = null

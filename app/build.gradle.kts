@@ -16,8 +16,8 @@ android {
         applicationId = "io.github.rok1208.routinecheck"
         minSdk = 26          // Android 8.0+ (오버레이 TYPE_APPLICATION_OVERLAY, 알림 채널 기준)
         targetSdk = 36          // 2026-08-31부터 플레이 신규 앱·업데이트 필수
-        versionCode = 10
-        versionName = "0.7.1"
+        versionCode = 11
+        versionName = "0.8.0"
     }
 
     // 릴리스 서명: 프로젝트 루트의 keystore.properties (git 제외) 가 있을 때만 사용
